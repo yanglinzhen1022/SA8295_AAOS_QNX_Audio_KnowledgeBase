@@ -300,15 +300,15 @@ AudioTrack的write()方法是应用写入音频数据的核心入口（[`AudioTr
 ```mermaid
 sequenceDiagram
     participant App as App线程
-    participant AT as AudioTrack(Native)
+    participant AT as AudioTrack（Native）
     participant Proxy as AudioTrackClientProxy
-    participant Cblk as audio_track_cblk_t(共享内存)
-    participant AF as PlaybackThread(AudioFlinger)
+    participant Cblk as audio_track_cblk_t（共享内存）
+    participant AF as PlaybackThread（AudioFlinger）
     
     App->>AT: write(buffer, size, blocking)
     AT->>AT: 检查transfer==TRANSFER_SYNC
     loop while userSize >= mFrameSize
-        AT->>Proxy: obtainBuffer(&audioBuffer, timeout)
+        AT->>Proxy: obtainBuffer(和audioBuffer, timeout)
         Proxy->>Cblk: 检查mRear-mFront < bufferCapacity
         alt 有可用空间
             Proxy-->>AT: 返回可用buffer指针
@@ -320,7 +320,7 @@ sequenceDiagram
             Proxy-->>AT: 返回WOULD_BLOCK
         end
         AT->>AT: memcpy(audioBuffer.raw, buffer, toWrite)
-        AT->>Proxy: releaseBuffer(&audioBuffer)
+        AT->>Proxy: releaseBuffer(和audioBuffer)
         Proxy->>Cblk: mRear += written(atomic)
         AF->>Cblk: 读取mRear(mFront推进)
     end
@@ -413,7 +413,7 @@ flowchart TD
     G -->|是| H["重置位置计数器<br>mPosition=0, mFramesWritten=0<br>清除cblk flags"]
     G -->|否| I["保留当前位置继续"]
     H --> I
-    I --> J{cblk flags & CBLK_INVALID?}
+    I --> J{cblk flags ＆ CBLK_INVALID?}
     J -->|否| K["mAudioTrack->start（） Binder调用"]
     J -->|是| L["restoreTrack_l（） 重建Track"]
     K --> M{status == DEAD_OBJECT?}
@@ -453,6 +453,87 @@ void AudioTrack::stop() {
 
 > **Offload vs 普通模式stop差异**：Offload模式下stop()只是标记STATE_STOPPING，需要等待DSP的STREAM_END事件才真正停止。在STOPPING期间，AudioTrackThread会继续监控状态并回调`EVENT_STREAM_END`。
 
+### pause()/flush()深度解析
+
+#### pause()内部实现（[`AudioTrack.cpp:1082`](frameworks/av/media/libaudioclient/AudioTrack.cpp:1082)）
+
+```cpp
+void AudioTrack::pause() {
+    AutoMutex lock(mLock);
+    if (mState == STATE_ACTIVE) {
+        mState = STATE_PAUSED;
+    } else if (mState == STATE_STOPPING) {  // Offload正在停止中
+        mState = STATE_PAUSED_STOPPING;
+    } else {
+        return;  // 非活动状态直接返回
+    }
+    mProxy->interrupt();     // 唤醒可能在等待的线程
+    mAudioTrack->pause();    // Binder调用AudioFlinger
+
+    if (isOffloaded_l()) {
+        // Offload: 缓存当前位置，因为Offload输出可能被其他Track复用
+        uint32_t halFrames;
+        AudioSystem::getRenderPosition(mOutput, &halFrames, &mPausedPosition);
+    }
+}
+```
+
+**pause()关键设计**：
+- **STATE_PAUSED_STOPPING**：Offload模式下STOPPING→PAUSED_STOPPING，表示DSP还在渲染但用户已暂停，恢复时回到STOPPING继续等待
+- **Offload位置缓存**：Offload输出可被多个同配置Track复用，暂停时缓存`mPausedPosition`防止其他Track的播放位置干扰getTimestamp()
+- **AudioFlinger侧**：`mAudioTrack->pause()`→TrackHandle→PlaybackThread::pause()→设置mPaused=true，AudioMixer对该Track做volume ramp down而非立即静音
+
+#### pauseAndWait() — 等待音量渐变完成（[`AudioTrack.cpp:1127`](frameworks/av/media/libaudioclient/AudioTrack.cpp:1127)）
+
+AOSP14新增方法，pause()后轮询等待AudioFlinger完成volume ramp down：
+
+```
+pauseAndWait(timeout):
+  1. 记录priorState和priorPosition
+  2. 调用pause()
+  3. 若priorState非ACTIVE → 直接返回true
+  4. 若Offload/Direct → 直接返回true（硬件处理ramp）
+  5. 循环等待（SLEEP_INTERVAL=10ms）：
+     - 检查mProxy->getState()不再为PAUSING
+     - 检查mProxy->getPosition()已前进（确认ramp完成）
+     - 超过POSITION_TIMEOUT(40ms)未变化 → 超时返回false
+  6. 总超时：timeout参数控制
+```
+
+> **应用场景**：切换音频源时需要确保前一个Track的音量完全ramp down，避免新Track声音和旧Track尾巴重叠。
+
+#### flush()内部实现（[`AudioTrack.cpp:996`](frameworks/av/media/libaudioclient/AudioTrack.cpp:996)）
+
+```cpp
+void AudioTrack::flush() {
+    AutoMutex lock(mLock);
+    if (mSharedBuffer != 0) return;  // STATIC模式不支持flush
+    if (mState == STATE_ACTIVE) return;  // 播放中不允许flush
+    flush_l();
+}
+
+void AudioTrack::flush_l() {
+    ALOG_ASSERT(mState != STATE_ACTIVE);
+    mMarkerPosition = 0;
+    mMarkerReached = false;
+    mUpdatePeriod = 0;
+    mRefreshRemaining = true;
+    mState = STATE_FLUSHED;
+    mReleased = 0;
+    if (isOffloaded_l()) {
+        mProxy->interrupt();
+    }
+    mProxy->flush();         // 重置FIFO读写指针
+    mAudioTrack->flush();    // Binder调用AudioFlinger
+}
+```
+
+**flush()关键约束**：
+- **ACTIVE状态禁止flush**：播放中flush会导致数据不一致，必须先pause()/stop()
+- **STATIC模式禁止flush**：静态buffer是一次性写入的，flush无意义
+- **flush_l()重置内容**：FIFO读写指针归零+marker/period计数器清零+mState→FLUSHED
+- **flush后start()行为**：STATE_FLUSHED→start()时，mPosition和mFramesWritten重置为0，从头开始播放
+
 ### ERROR_DEAD_OBJECT恢复流程
 
 当AudioFlinger进程重启或Track被系统回收时，Client侧会收到DEAD_OBJECT错误：
@@ -460,8 +541,8 @@ void AudioTrack::stop() {
 ```mermaid
 sequenceDiagram
     participant AT as AudioTrack
-    participant AF as AudioFlinger(旧)
-    participant AF2 as AudioFlinger(新)
+    participant AF as AudioFlinger（旧）
+    participant AF2 as AudioFlinger（新）
     
     AT->>AF: mAudioTrack->start()
     AF--xAT: DEAD_OBJECT (Binder死亡)
@@ -473,6 +554,72 @@ sequenceDiagram
 ```
 
 `restoreTrack_l()`核心逻辑：重新调用createTrack_l()，用新的IAudioTrack替换旧的，重新映射共享内存，并恢复所有参数（音量、采样率、辅助效果等）。
+
+### 音量控制机制 — setVolume()与VolumeShaper
+
+#### setVolume() — 即时音量设置（[`AudioTrack.cpp:1126`](frameworks/av/media/libaudioclient/AudioTrack.cpp:1126)）
+
+```cpp
+status_t AudioTrack::setVolume(float left, float right) {
+    // 范围检查: 0.0~1.0
+    if (isnanf(left) || left < 0.0f || left > 1.0f ||
+        isnanf(right) || right < 0.0f || right > 1.0f) {
+        return BAD_VALUE;
+    }
+    AutoMutex lock(mLock);
+    mVolume[AUDIO_INTERLEAVE_LEFT] = left;
+    mVolume[AUDIO_INTERLEAVE_RIGHT] = right;
+    // float→minifloat转换，写入共享内存cblk
+    mProxy->setVolumeLR(gain_minifloat_pack(gain_from_float(left), gain_from_float(right)));
+    if (isOffloaded_l()) {
+        mAudioTrack->signal();  // Offload: 唤醒OutputThread应用新音量
+    }
+    return NO_ERROR;
+}
+```
+
+**音量传递路径**：
+
+```
+App.setVolume(left, right)
+  → mProxy->setVolumeLR()           // 写入cblk共享内存
+  → AudioFlinger PlaybackThread读取
+    → AudioMixer::setParameter(VOLUME)
+      → 软件混音时乘以音量系数
+  → Offload: mAudioTrack->signal()  // 唤醒DirectOutputThread
+    → HAL stream->setVolume()       // 直接设置DSP音量
+```
+
+> **setVolume vs stream volume**：setVolume()是App级别的Track音量，AudioFlinger混音时还会叠加stream type音量和device音量。最终硬件音量 = TrackVolume × StreamVolume × DeviceVolume。
+
+#### VolumeShaper — 音量渐变动画（[`VolumeShaper.h`](frameworks/av/media/libmedia/include/media/VolumeShaper.h)）
+
+VolumeShaper提供基于曲线的音量渐变（fade in/out/duck等），由`mVolumeHandler`管理：
+
+| 组件 | 职责 |
+|------|------|
+| [`VolumeShaper::Configuration`](frameworks/av/media/libmedia/include/media/VolumeShaper.h) | 定义音量曲线（cubefit插值）+ 持续时间 + id |
+| [`VolumeShaper::Operation`](frameworks/av/media/libmedia/include/media/VolumeShaper.h) | 控制播放/反向/终止等操作 |
+| [`VolumeShaper::State`](frameworks/av/media/libmedia/include/media/VolumeShaper.h) | 当前音量+位置状态 |
+| `VolumeHandler` | 管理多个VolumeShaper实例，getVolume()时叠加所有曲线 |
+
+**VolumeShaper典型流程**：
+
+```
+1. 创建: applyVolumeShaper(config, operation)
+   → mVolumeHandler->addConfig()分配id
+   → 返回id给App
+
+2. 播放: applyVolumeShaper(config with id, PLAY)
+   → VolumeHandler开始按曲线计算每帧音量
+   → AudioMixer混音时读取getVolume()获取叠加音量
+
+3. duck场景: 焦点丢失→AudioService调用applyVolumeShaper(duck config)
+   → 曲线从1.0渐变到0.3（约400ms）
+   → 焦点恢复→反向播放曲线从0.3渐变到1.0
+```
+
+> **VolumeShaper vs setVolume**：VolumeShaper在AudioFlinger混音线程中逐帧计算音量曲线，实现平滑渐变；setVolume是瞬时设置，可能导致click噪声。系统内部焦点duck/fade统一使用VolumeShaper。
 
 ### 传输模式深度对比
 
@@ -687,7 +834,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant App as App线程
-    participant AR as AudioRecord(Native)
+    participant AR as AudioRecord（Native）
     participant Proxy as AudioRecordClientProxy
     participant Cblk as audio_track_cblk_t
     participant RT as RecordThread
@@ -697,7 +844,7 @@ sequenceDiagram
     
     App->>AR: read(buffer, size, readMode)
     loop while userSize >= mFrameSize
-        AR->>Proxy: obtainBuffer(&audioBuffer, timeout)
+        AR->>Proxy: obtainBuffer(和audioBuffer, timeout)
         Proxy->>Cblk: 检查mRear-mFront > 0
         alt 有数据
             Proxy-->>AR: 返回buffer指针
@@ -709,7 +856,7 @@ sequenceDiagram
             Proxy-->>AR: WOULD_BLOCK
         end
         AR->>AR: memcpy(buffer, audioBuffer.raw)
-        AR->>Proxy: releaseBuffer(&audioBuffer)
+        AR->>Proxy: releaseBuffer(和audioBuffer)
         Proxy->>Cblk: mFront += readFrames
     end
 ```
@@ -993,6 +1140,652 @@ void errorCallback(AAudioStream *stream, void *userData, aaudio_result_t error) 
 ```
 
 > **与AudioTrack的DEAD_OBJECT对比**：AudioTrack内部自动restoreTrack_l()，AAudio则将重建决策交给App——因为AAudio的Stream配置可能需要调整（如切换设备后采样率变化），App比框架层更适合决定如何重建。
+
+### AAudio服务端架构 — oboeservice深度解析
+
+#### 架构总览
+
+AAudio服务端代码位于[`frameworks/av/services/oboeservice/`](frameworks/av/services/oboeservice/)，运行在audioserver进程中，是AAudio低延迟能力的关键实现层。其核心职责包括：
+
+- 管理EXCLUSIVE（MMAP）和SHARED两条音频路径
+- 维护流状态机与命令队列，确保线程安全
+- 通过EndpointManager管理设备端点的生命周期
+- 通过SharedRingBuffer实现跨进程零拷贝音频数据传输
+
+**类层次关系**：
+
+```mermaid
+graph TB
+    AAudioService["AAudioService<br>BinderService + BnAAudioService"]
+    AAudioService --> AAudioServiceStreamBase["AAudioServiceStreamBase<br>RefBase + AAudioStreamParameters + Runnable"]
+    AAudioServiceStreamBase --> AAudioServiceStreamMMAP["AAudioServiceStreamMMAP<br>EXCLUSIVE路径"]
+    AAudioServiceStreamBase --> AAudioServiceStreamShared["AAudioServiceStreamShared<br>SHARED路径"]
+
+    AAudioServiceEndpoint["AAudioServiceEndpoint<br>RefBase + AAudioStreamParameters"]
+    AAudioServiceEndpoint --> AAudioServiceEndpointMMAP["AAudioServiceEndpointMMAP<br>+ MmapStreamCallback"]
+    AAudioServiceEndpoint --> AAudioServiceEndpointShared["AAudioServiceEndpointShared<br>+ AudioStreamInternal"]
+    AAudioServiceEndpointShared --> AAudioServiceEndpointPlay["AAudioServiceEndpointPlay<br>+ AAudioMixer"]
+    AAudioServiceEndpointShared --> AAudioServiceEndpointCapture["AAudioServiceEndpointCapture<br>+ DistributionBuffer"]
+
+    AAudioEndpointManager["AAudioEndpointManager<br>Singleton"]
+    AAudioClientTracker["AAudioClientTracker<br>Singleton"]
+```
+
+**两条数据路径的本质区别**：
+
+| 维度 | EXCLUSIVE（MMAP） | SHARED |
+|------|-------------------|--------|
+| Stream类型 | [`AAudioServiceStreamMMAP`](frameworks/av/services/oboeservice/AAudioServiceStreamMMAP.h) | [`AAudioServiceStreamShared`](frameworks/av/services/oboeservice/AAudioServiceStreamShared.h) |
+| Endpoint类型 | [`AAudioServiceEndpointMMAP`](frameworks/av/services/oboeservice/AAudioServiceEndpointMMAP.h) | [`AAudioServiceEndpointPlay`](frameworks/av/services/oboeservice/AAudioServiceEndpointPlay.h) / [`AAudioServiceEndpointCapture`](frameworks/av/services/oboeservice/AAudioServiceEndpointCapture.h) |
+| 数据传输 | App↔DSP共享内存，零拷贝 | App→FIFO→Service混音→AudioTrack |
+| 混音 | 无（独占设备） | [`AAudioMixer`](frameworks/av/services/oboeservice/AAudioMixer.h)软件混音 |
+| 延迟 | 极低（<10ms） | 中等（传统AudioFlinger延迟） |
+| 并发 | 每设备仅一个EXCLUSIVE流 | 多流共享同一Endpoint |
+
+---
+
+#### AAudioService — Binder服务入口
+
+[`AAudioService`](frameworks/av/services/oboeservice/AAudioService.h)继承`BinderService<AAudioService>`和[`BnAAudioService`](frameworks/av/media/libaaudio/src/binding/AAudioServiceInterface.h)，注册为`media.aaudio`服务，是客户端与oboeservice交互的唯一Binder入口。
+
+**核心Binder方法**：
+
+```c++
+// AAudioService.h
+class AAudioService :
+    public BinderService<AAudioService>,
+    public aaudio::BnAAudioService {
+public:
+    binder::Status openStream(const StreamRequest& request,
+                              StreamParameters* paramsOut,
+                              int32_t* _aidl_return) override;
+    binder::Status closeStream(int32_t streamHandle, int32_t* _aidl_return) override;
+    binder::Status startStream(int32_t streamHandle, int32_t* _aidl_return) override;
+    binder::Status pauseStream(int32_t streamHandle, int32_t* _aidl_return) override;
+    binder::Status stopStream(int32_t streamHandle, int32_t* _aidl_return) override;
+    binder::Status flushStream(int32_t streamHandle, int32_t* _aidl_return) override;
+    binder::Status registerAudioThread(int32_t streamHandle, int32_t clientThreadId,
+                                       int64_t periodNanoseconds, int32_t* _aidl_return) override;
+    binder::Status unregisterAudioThread(int32_t streamHandle, int32_t clientThreadId,
+                                         int32_t* _aidl_return) override;
+    binder::Status exitStandby(int32_t streamHandle, Endpoint* endpoint,
+                               int32_t* _aidl_return) override;
+};
+```
+
+**openStream完整流程**：
+
+```mermaid
+graph TD
+    Client["Client: openStream()"] --> Lock["mOpenLock递归锁"]
+    Lock --> CheckLimit["检查MAX_STREAMS_PER_PROCESS=8"]
+    CheckLimit --> |"EXCLUSIVE + isExclusiveEnabled"| TryMMAP["new AAudioServiceStreamMMAP<br>inService判断"]
+    TryMMAP --> |"成功"| Register["mStreamTracker.addStreamForHandle<br>AAudioClientTracker.registerClientStream"]
+    TryMMAP --> |"失败"| Fallback["sharingModeMatchRequired?"]
+    Fallback --> |"否，可降级"| TryShared["new AAudioServiceStreamShared<br>修改sharingMode=SHARED"]
+    Fallback --> |"是，不可降级"| Fail["返回错误"]
+    CheckLimit --> |"SHARED"| TryShared2["new AAudioServiceStreamShared"]
+    TryShared --> Register
+    TryShared2 --> Register
+    Register --> ReturnHandle["返回streamHandle给Client"]
+```
+
+**关键实现细节**：
+
+1. **mOpenLock递归锁保护**（[`AAudioService.h:128`](frameworks/av/services/oboeservice/AAudioService.h:128)）：防止exclusive endpoint被steal后出现竞态。场景：线程A打开EXCLUSIVE endpoint→线程B steal A的endpoint→线程B打开SHARED→线程A需降级也打开SHARED，锁确保顺序正确
+
+2. **MAX_STREAMS_PER_PROCESS=8**（[`AAudioService.cpp:41`](frameworks/av/services/oboeservice/AAudioService.cpp:41)）：每个进程最多8个AAudio流，通过[`AAudioClientTracker::getStreamCount()`](frameworks/av/services/oboeservice/AAudioClientTracker.h)检查
+
+3. **EXCLUSIVE→SHARED降级逻辑**（[`AAudioService.cpp:139-165`](frameworks/av/services/oboeservice/AAudioService.cpp:139)）：
+   - 先尝试EXCLUSIVE模式，创建`AAudioServiceStreamMMAP`
+   - 失败后若`!sharingModeMatchRequired`，修改request的sharingMode为SHARED，创建`AAudioServiceStreamShared`
+   - `sharingModeMatchRequired=true`时（App明确要求EXCLUSIVE），不降级直接返回错误
+
+4. **inService判断**：若调用者本身就是audioserver进程（`isCallerInService()`为true），则信任request中的`isInService()`标志。此标志影响MMAP流的`startDevice`行为——inService流不需要调用`startClient`
+
+5. **StreamTracker注册**（[`AAudioStreamTracker`](frameworks/av/services/oboeservice/AAudioStreamTracker.h)）：为每个打开的流分配handle，后续所有操作（start/pause/stop/close）均通过handle查找对应serviceStream
+
+**AAudioBinderAdapter内部类**：
+
+[`AAudioService::Adapter`](frameworks/av/services/oboeservice/AAudioService.h:98)继承[`AAudioBinderAdapter`](frameworks/av/media/libaaudio/src/binding/AAudioBinderAdapter.h)，适配`startClient/stopClient`方法。这两个方法不走Binder（它们由AudioFlinger的MmapThread回调触发），直接委托给AAudioService：
+
+```c++
+// AAudioService.h - Adapter内部类
+class Adapter : public aaudio::AAudioBinderAdapter {
+    aaudio_result_t startClient(const AAudioHandleInfo& streamHandleInfo,
+                                const AudioClient& client,
+                                const audio_attributes_t* attr,
+                                audio_port_handle_t* clientHandle) override {
+        return mService->startClient(streamHandleInfo.getHandle(), client, attr, clientHandle);
+    }
+    aaudio_result_t stopClient(const AAudioHandleInfo& streamHandleInfo,
+                               audio_port_handle_t clientHandle) override {
+        return mService->stopClient(streamHandleInfo.getHandle(), clientHandle);
+    }
+};
+```
+
+**调度优先级**：
+
+```c++
+static constexpr int32_t kRealTimeAudioPriorityClient = 2;  // 客户端音频线程优先级
+static constexpr int32_t kRealTimeAudioPriorityService = 3; // 服务端音频线程优先级
+```
+
+---
+
+#### AAudioServiceStreamBase — 流状态机与命令队列
+
+[`AAudioServiceStreamBase`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h)是每个客户端流在服务端的对应实体，继承`RefBase`+`AAudioStreamParameters`+`Runnable`，封装了流状态机、命令队列和消息队列。
+
+**流状态机**：
+
+```mermaid
+graph LR
+    UNINITIALIZED["UNINITIALIZED"] --> |"open()"| OPEN["OPEN"]
+    OPEN --> |"start()"| STARTED["STARTED"]
+    STARTED --> |"pause()"| PAUSED["PAUSED"]
+    STARTED --> |"stop()"| STOPPED["STOPPED"]
+    PAUSED --> |"start()"| STARTED
+    STOPPED --> |"start()"| STARTED
+    PAUSED --> |"flush()"| OPEN
+    STOPPED --> |"flush()"| OPEN
+    OPEN --> |"close()"| CLOSED["CLOSED"]
+    STARTED --> |"close()"| CLOSED
+    PAUSED --> |"close()"| CLOSED
+    STOPPED --> |"close()"| CLOSED
+    STARTED --> |"3s idle"| STANDBY["STANDBY"]
+    STANDBY --> |"exitStandby()"| STARTED
+```
+
+状态存储在[`mState`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:313)成员中，通过[`setState()`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:286)方法更新，状态变更会通过`sendServiceEvent`通知客户端。
+
+**命令队列架构**：
+
+所有流操作（start/pause/stop/flush/close等）均通过命令队列序列化执行，确保线程安全：
+
+```mermaid
+graph LR
+    BinderThread["Binder线程"] --> |"sendCommand"| CommandQueue["AAudioCommandQueue"]
+    CommandQueue --> |"waitForCommand"| CommandThread["mCommandThread<br>AAudioThread"]
+    CommandThread --> |"执行命令"| HandleStart["handleStart_l()"]
+    CommandThread --> |"执行命令"| HandlePause["handlePause_l()"]
+    CommandThread --> |"执行命令"| HandleStop["handleStop_l()"]
+    CommandThread --> |"执行命令"| HandleClose["handleClose_l()"]
+```
+
+10种命令枚举定义在[`AAudioServiceStreamBase.h:359-370`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:359)：
+
+```c++
+enum : int32_t {
+    START,                    // 启动流
+    PAUSE,                    // 暂停流
+    STOP,                     // 停止流
+    FLUSH,                    // 刷新缓冲区
+    CLOSE,                    // 关闭流
+    DISCONNECT,               // 断开连接
+    REGISTER_AUDIO_THREAD,    // 注册客户端音频线程
+    UNREGISTER_AUDIO_THREAD,  // 注销客户端音频线程
+    GET_DESCRIPTION,          // 获取Endpoint描述
+    EXIT_STANDBY,             // 退出待机模式
+};
+```
+
+**AAudioCommand与AAudioCommandQueue**：
+
+[`AAudioCommand`](frameworks/av/services/oboeservice/AAudioCommandQueue.h:34)封装命令参数和同步等待机制：
+
+```c++
+// AAudioCommandQueue.h
+class AAudioCommand {
+    const aaudio_command_opcode operationCode;     // 命令类型
+    std::shared_ptr<AAudioCommandParam> parameter; // 命令参数（多态）
+    bool isWaitingForReply;                        // 是否等待执行结果
+    const int64_t timeoutNanoseconds;              // 超时时间
+    aaudio_result_t result = AAUDIO_OK;            // 执行结果
+    std::mutex lock;                               // 保护result的条件变量
+    std::condition_variable conditionVariable;      // 通知调用者命令完成
+};
+```
+
+命令参数通过[`AAudioCommandParam`](frameworks/av/services/oboeservice/AAudioCommandQueue.h:24)基类实现多态，4种子类参数：
+
+| 参数子类 | 用途 | 定义位置 |
+|----------|------|----------|
+| [`RegisterAudioThreadParam`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:252) | 注册音频线程：ownerPid + clientThreadId + priority | StreamBase内部类 |
+| [`UnregisterAudioThreadParam`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:266) | 注销音频线程：clientThreadId | StreamBase内部类 |
+| [`GetDescriptionParam`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:276) | 获取Endpoint描述：parcelable指针 | StreamBase内部类 |
+| [`ExitStandbyParam`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:325) | 退出待机：parcelable指针 | StreamBase内部类 |
+
+**sendCommand流程**：
+
+```
+Binder线程 → sendCommand(opCode, param, waitForReply, timeout)
+    → mCommandQueue.sendCommand(command)
+    → 命令入队，唤醒CommandThread
+    → 若waitForReply=true：等待conditionVariable（带超时）
+    → CommandThread: waitForCommand() → 取出命令 → run()中执行handleCommand
+    → 命令执行完毕，notify conditionVariable
+    → Binder线程收到结果
+```
+
+**锁顺序与线程安全**：
+
+[`AAudioServiceStreamBase.h:434-439`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:434)明确定义了锁的获取顺序：
+
+```
+mLock → AAudioServiceEndpoint::mLockStreams
+```
+
+所有需要mLock的操作必须通过CommandThread执行（命令队列天然串行化），从而避免在Binder线程中直接持锁。
+
+**向上消息队列**：
+
+[`mUpMessageQueue`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:357)（`SharedRingBuffer`）用于从Service向Client发送事件通知，由[`writeUpMessageQueue()`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:294)写入[`AAudioServiceMessage`](frameworks/av/media/libaaudio/src/binding/AAudioServiceMessage.h)，包括：
+
+- `AAUDIO_SERVICE_EVENT_STARTED` / `PAUSED` / `STOPPED` / `FLUSHED` — 状态变更通知
+- `AAUDIO_SERVICE_EVENT_DISCONNECTED` — 设备断开
+- `AAUDIO_SERVICE_EVENT_TIMESTAMP` — 周期性时间戳推送
+
+**Standby自动待机机制**：
+
+流在IDLE状态（OPEN/PAUSED/STOPPED）超过3秒（`IDLE_TIMEOUT_NANOS`）后自动进入standby。Standby状态下MMAP buffer被释放以节省资源，客户端调用`exitStandby()`时重新分配。此机制通过[`TimestampScheduler`](frameworks/av/services/oboeservice/TimestampScheduler.h)配合空闲检测实现。
+
+**流控制原子标志**：
+
+| 标志 | 类型 | 含义 |
+|------|------|------|
+| [`mFlowing`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:420) | `bool` | 数据是否正在流动 |
+| [`mSuspended`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:428) | `atomic<bool>` | 流是否被挂起（如消息队列溢出） |
+| [`mCloseNeeded`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:424) | `atomic<bool>` | 标记流需要关闭（单向标志） |
+| [`mConnected`](frameworks/av/services/oboeservice/AAudioServiceEndpoint.h:164) | `atomic<bool>` | Endpoint是否已连接 |
+
+**Endpoint弱引用设计**：
+
+[`mServiceEndpointWeak`](frameworks/av/services/oboeservice/AAudioServiceStreamBase.h:388)使用弱引用避免循环引用：Stream→Endpoint→mRegisteredStreams→Stream。访问Endpoint时通过`wp::promote()`提升为sp，若提升失败说明Endpoint已被销毁。
+
+---
+
+#### AAudioEndpointManager — 端点管理器
+
+[`AAudioEndpointManager`](frameworks/av/services/oboeservice/AAudioEndpointManager.h)是Singleton，管理所有EXCLUSIVE和SHARED端点，负责端点的查找、创建和复用。
+
+**分离锁设计**：
+
+```c++
+// AAudioEndpointManager.h
+mutable std::mutex mSharedLock;                                    // 保护SHARED端点
+std::vector<android::sp<AAudioServiceEndpointShared>> mSharedStreams GUARDED_BY(mSharedLock);
+
+mutable std::mutex mExclusiveLock;                                 // 保护EXCLUSIVE端点
+std::vector<android::sp<AAudioServiceEndpointMMAP>> mExclusiveStreams GUARDED_BY(mExclusiveLock);
+```
+
+使用两把独立锁而非一把全局锁的原因：**打开SHARED端点需要先打开EXCLUSIVE端点**（共享的AudioStreamInternal底层也依赖MMAP设备）。如果使用同一把锁，`openSharedEndpoint`内部调用`openExclusiveEndpoint`会造成递归死锁。锁的获取顺序规定为：**先mSharedLock后mExclusiveLock**。
+
+**Endpoint查找与复用**：
+
+[`openEndpoint()`](frameworks/av/services/oboeservice/AAudioEndpointManager.h:53)的决策逻辑：
+
+```
+openEndpoint(request)
+  → sharingMode == EXCLUSIVE?
+    → 是: openExclusiveEndpoint()
+      → findExclusiveEndpoint_l(): 按deviceId/direction/格式查找已有端点
+      → 找到: 引用计数+1，返回
+      → 未找到: 新建AAudioServiceEndpointMMAP，open()
+    → 否: openSharedEndpoint()
+      → findSharedEndpoint_l(): 同上查找
+      → 找到: 引用计数+1，返回
+      → 未找到: 新建AAudioServiceEndpointPlay/Capture，open()
+```
+
+端点匹配由[`AAudioServiceEndpoint::matches()`](frameworks/av/services/oboeservice/AAudioServiceEndpoint.h:109)实现，比较deviceId、direction、format等关键参数。
+
+**Endpoint Stealing机制**：
+
+当EXCLUSIVE端点已被占用，新请求需要该端点时，[`kStealingEnabled=true`](frameworks/av/services/oboeservice/AAudioEndpointManager.h:112)允许"偷取"：
+
+```
+openExclusiveEndpoint()
+  → findExclusiveEndpoint_l() 未找到空闲端点
+  → kStealingEnabled && 有已注册端点?
+    → 是: 选择victim端点，断开其所有stream
+    → victim端点close()后重新open()给新请求者
+```
+
+Stealing场景：应用A独占MMAP播放→应用B（优先级更高）请求同一设备→A的流被disconnect→B获得EXCLUSIVE端点→A降级为SHARED。
+
+**统计计数**：
+
+[`AAudioEndpointManager`](frameworks/av/services/oboeservice/AAudioEndpointManager.h:90)维护5组统计，用于调试和性能分析：
+
+| 计数器 | EXCLUSIVE | SHARED | 含义 |
+|--------|-----------|--------|------|
+| SearchCount | mExclusiveSearchCount | mSharedSearchCount | 查找次数 |
+| FoundCount | mExclusiveFoundCount | mSharedFoundCount | 命中已有端点次数 |
+| OpenCount | mExclusiveOpenCount | mSharedOpenCount | 新建端点次数 |
+| CloseCount | mExclusiveCloseCount | mSharedCloseCount | 关闭端点次数 |
+| StolenCount | mExclusiveStolenCount | — | 端点被偷取次数 |
+
+---
+
+#### MMAP路径：AAudioServiceEndpointMMAP
+
+[`AAudioServiceEndpointMMAP`](frameworks/av/services/oboeservice/AAudioServiceEndpointMMAP.h)是EXCLUSIVE模式的核心实现，通过[`MmapStreamInterface`](frameworks/av/media/libaaudio/src/binding/AAudioServiceInterface.h)与AudioFlinger的MmapPlaybackThread/MmapCaptureThread交互。
+
+**open流程与格式降级链**：
+
+```mermaid
+graph TD
+    Open["open(request)"] --> OpenWithFormat["openWithFormat(format)"]
+    OpenWithFormat --> PCM_FLOAT["AUDIO_FORMAT_PCM_FLOAT"]
+    PCM_FLOAT --> |"成功"| CreateMmap["createMmapBuffer()"]
+    PCM_FLOAT --> |"失败"| PCM_32["AUDIO_FORMAT_PCM_32_BIT"]
+    PCM_32 --> |"成功"| CreateMmap
+    PCM_32 --> |"失败"| PCM_24["AUDIO_FORMAT_PCM_24_BIT_PACKED"]
+    PCM_24 --> |"成功"| CreateMmap
+    PCM_24 --> |"失败"| PCM_16["AUDIO_FORMAT_PCM_16_BIT"]
+    PCM_16 --> |"成功"| CreateMmap
+    PCM_16 --> |"失败"| Fail["返回AAUDIO_ERROR_UNAVAILABLE"]
+    CreateMmap --> |"MmapStreamInterface::openMmapStream"| SetupWrapper["SharedMemoryWrapper初始化"]
+```
+
+格式降级链：PCM_FLOAT → PCM_32_BIT → PCM_24_BIT_PACKED → PCM_16_BIT
+
+`openWithFormat`调用[`MmapStreamInterface::openMmapStream()`](frameworks/av/media/libaaudio/src/binding/AAudioServiceInterface.h)打开AudioFlinger侧的MmapThread，HAL不支持当前格式时返回错误，触发降级到下一格式。
+
+**核心成员**：
+
+```c++
+// AAudioServiceEndpointMMAP.h
+android::sp<android::MmapStreamInterface> mMmapStream;        // AudioFlinger Mmap流接口
+struct audio_mmap_buffer_info mMmapBufferinfo;                 // MMAP buffer信息
+audio_port_handle_t mPortHandle = AUDIO_PORT_HANDLE_NONE;     // 端口句柄
+std::unique_ptr<SharedMemoryWrapper> mAudioDataWrapper;        // 音频数据内存包装器
+MonotonicCounter mFramesTransferred;                           // 32→64位帧计数器
+```
+
+**startStream / startClient流程**：
+
+MMAP端点的启动分两层：
+
+1. **Endpoint层**：[`startStream()`](frameworks/av/services/oboeservice/AAudioServiceEndpointMMAP.h:44)遍历mRegisteredStreams，找到对应stream后调用`startClient`
+2. **Client层**：[`startClient()`](frameworks/av/services/oboeservice/AAudioServiceEndpointMMAP.h:50)调用`mMmapStream->start()`，通知AudioFlinger的MmapThread启动客户端
+
+```
+startStream(stream, clientHandle)
+  → 注册stream到endpoint
+  → startClient(client, attr, clientHandle)
+    → mMmapStream->start(client, attr, clientHandle)
+    → AudioFlinger MmapThread::start(clientPid, ...)
+    → HAL层开始传输
+```
+
+**MmapStreamCallback回调**：
+
+[`AAudioServiceEndpointMMAP`](frameworks/av/services/oboeservice/AAudioServiceEndpointMMAP.h)实现[`MmapStreamCallback`](frameworks/av/media/libaaudio/src/binding/AAudioServiceInterface.h)接口，处理AudioFlinger回调：
+
+| 回调方法 | 触发场景 | 处理方式 |
+|----------|----------|----------|
+| [`onTearDown(portHandle)`](frameworks/av/services/oboeservice/AAudioServiceEndpointMMAP.h:69) | 设备移除/路由变更 | `handleTearDownAsync()`——**异步线程执行**避免死锁 |
+| [`onVolumeChanged(volume)`](frameworks/av/services/oboeservice/AAudioServiceEndpointMMAP.h:72) | 音量变化 | 遍历mRegisteredStreams通知`onVolumeChanged` |
+| [`onRoutingChanged(portHandle)`](frameworks/av/services/oboeservice/AAudioServiceEndpointMMAP.h:74) | 路由变更 | 断开所有已注册stream |
+
+**handleTearDownAsync为何必须异步**：`onTearDown`在AudioFlinger的MmapThread锁内调用，若同步执行disconnect会尝试获取Endpoint的mLockStreams，而该锁可能正被另一个持有MmapThread锁的线程等待——形成ABBA死锁。异步投递到独立线程打破锁嵌套。
+
+**standby / exitStandby**：
+
+```c++
+// standby: 释放MMAP buffer，节省资源
+aaudio_result_t AAudioServiceEndpointMMAP::standby() {
+    mMmapStream->standby();           // 通知AudioFlinger
+    mAudioDataWrapper.reset();         // 释放SharedMemoryWrapper
+}
+
+// exitStandby: 重新分配MMAP buffer
+aaudio_result_t AAudioServiceEndpointMMAP::exitStandby(AudioEndpointParcelable* parcelable) {
+    createMmapBuffer();                // 重新创建MMAP buffer
+    mAudioDataWrapper->setup(...);     // 重新初始化SharedMemoryWrapper
+    getDownDataDescription(parcelable);// 填充Parcelable返回客户端
+}
+```
+
+**MonotonicCounter — 32→64位位置转换**：
+
+HAL的`getMmapPosition()`返回32位帧位置，可能回绕。[`MonotonicCounter`](frameworks/av/media/libaaudio/src/utility/MonotonicCounter.h)通过检测回绕将其扩展为64位单调递增值：
+
+```
+getFreeRunningPosition()
+  → mMmapStream->getMmapPosition()  // 返回32位position
+  → mFramesTransferred.update32(position32)  // 检测回绕，更新64位计数
+  → *positionFrames = mFramesTransferred.get()  // 返回64位单调位置
+```
+
+---
+
+#### Shared路径：AAudioServiceEndpointPlay/Capture
+
+SHARED路径用于多个客户端流共享同一设备端点，通过软件混音/分发实现并发。
+
+**AAudioServiceEndpointPlay — 播放混音**：
+
+[`AAudioServiceEndpointPlay`](frameworks/av/services/oboeservice/AAudioServiceEndpointPlay.h)继承[`AAudioServiceEndpointShared`](frameworks/av/services/oboeservice/AAudioServiceEndpointShared.h)，内含[`AAudioMixer`](frameworks/av/services/oboeservice/AAudioMixer.h)实现多流混音：
+
+```mermaid
+graph TD
+    ClientA["Client A FIFO"] --> |"读"| Mixer["AAudioMixer<br>mMixer"]
+    ClientB["Client B FIFO"] --> |"读"| Mixer
+    ClientC["Client C FIFO"] --> |"读"| Mixer
+    Mixer --> |"混合输出"| StreamInternal["AudioStreamInternalPlay<br>底层AudioTrack"]
+    StreamInternal --> |"write"| AudioFlinger["AudioFlinger<br>MixerThread"]
+```
+
+**callbackLoop混音循环**：
+
+```
+callbackLoop() {
+    while (mCallbackEnabled) {
+        mMixer.clear();                          // 清空混音缓冲区
+        for (stream : mRegisteredStreams) {       // 遍历所有活跃流
+            if (stream.isFlowing() && !stream.isSuspended()) {
+                framesMixed = mMixer.mix(index, fifo, allowUnderflow);
+                // 从client的FIFO读取数据，混入混音缓冲区
+            }
+        }
+        getStreamInternal()->write(mixerBuffer, framesPerBurst); // 写入AudioTrack
+        // underflow检测: framesMixed < getFramesPerBurst() && isFlowing()
+    }
+}
+```
+
+**BURSTS_PER_BUFFER_DEFAULT=2**：每次callback处理2个burst的数据量，平衡延迟与CPU效率。
+
+**时间戳位置偏移**：Shared播放流的位置计算需要考虑混音延迟：
+
+```
+clientPosition = mmapFramesWritten - clientFramesRead + mTimestampPositionOffset
+```
+
+[`mTimestampPositionOffset`](frameworks/av/services/oboeservice/AAudioServiceStreamShared.h:102)在每次数据传输完成时通过[`markTransferTime()`](frameworks/av/services/oboeservice/AAudioServiceStreamShared.h:97)更新。
+
+**AAudioServiceEndpointCapture — 录音分发**：
+
+[`AAudioServiceEndpointCapture`](frameworks/av/services/oboeservice/AAudioServiceEndpointCapture.h)继承`AAudioServiceEndpointShared`，数据流方向相反——从AudioRecord读取后分发给各客户端流：
+
+```mermaid
+graph TD
+    AudioFlinger["AudioFlinger<br>RecordThread"] --> |"read"| StreamInternal["AudioStreamInternalCapture<br>底层AudioRecord"]
+    StreamInternal --> |"read"| DistBuffer["mDistributionBuffer<br>每burst大小"]
+    DistBuffer --> |"writeDataIfRoom"| ClientA["Client A FIFO"]
+    DistBuffer --> |"writeDataIfRoom"| ClientB["Client B FIFO"]
+```
+
+**callbackLoop分发循环**：
+
+```
+callbackLoop() {
+    while (mCallbackEnabled) {
+        framesRead = getStreamInternal()->read(mDistributionBuffer, framesPerBurst);
+        for (stream : mRegisteredStreams) {
+            stream.writeDataIfRoom(mmapFramesRead, mDistributionBuffer, framesRead);
+            // 向每个client的FIFO写入数据
+        }
+    }
+}
+```
+
+[`writeDataIfRoom()`](frameworks/av/services/oboeservice/AAudioServiceStreamShared.h:49)检查FIFO是否有足够空间，空间不足时丢弃数据并递增XRun计数。
+
+**mRunningStreamCount计数**：
+
+[`mRunningStreamCount`](frameworks/av/services/oboeservice/AAudioServiceEndpointShared.h:78)（`atomic<int>`）跟踪当前活跃的流数量：
+- `startStream()` → count++ → 若count从0变1，调用`startSharingThread_l()`启动callbackLoop线程
+- `stopStream()` → count-- → 若count变为0，调用`stopSharingThread()`停止线程
+
+**handleDisconnectRegisteredStreamsAsync**：
+
+[`AAudioServiceEndpointShared`](frameworks/av/services/oboeservice/AAudioServiceEndpointShared.h:67)在底层AudioStreamInternal断开时，异步断开所有已注册stream，避免在callbackLoop线程中同步操作造成死锁：
+
+```
+handleDisconnectRegisteredStreamsAsync()
+  → 新建线程
+    → 遍历mRegisteredStreams
+      → stream->disconnect()
+```
+
+---
+
+#### AAudioClientTracker — 客户端生命周期
+
+[`AAudioClientTracker`](frameworks/av/services/oboeservice/AAudioClientTracker.h)是Singleton，跟踪每个进程的AAudio客户端，负责Binder死亡通知和进程级流计数限制。
+
+**NotificationClient内部类**：
+
+```c++
+// AAudioClientTracker.h
+class NotificationClient : public IBinder::DeathRecipient {
+    const pid_t mProcessId;                                    // 客户端进程PID
+    std::set<android::sp<AAudioServiceStreamBase>> mStreams;   // 该进程的所有流
+    android::sp<IBinder> mBinder;                              // 持有binder引用以接收死亡通知
+    bool mExclusiveEnabled = true;                             // 是否允许EXCLUSIVE MMAP
+};
+```
+
+**核心功能**：
+
+1. **Binder死亡通知**：[`binderDied()`](frameworks/av/services/oboeservice/AAudioClientTracker.h:80)回调在客户端进程死亡时触发，自动关闭该进程的所有AAudio流，释放MMAP资源
+
+2. **进程级流计数**：[`getStreamCount(pid)`](frameworks/av/services/oboeservice/AAudioClientTracker.h:48)用于`MAX_STREAMS_PER_PROCESS=8`限制检查
+
+3. **Exclusive开关**：[`setExclusiveEnabled(pid, enabled)`](frameworks/av/services/oboeservice/AAudioClientTracker.h:55) / [`isExclusiveEnabled(pid)`](frameworks/av/services/oboeservice/AAudioClientTracker.h:57)控制特定进程是否能创建EXCLUSIVE MMAP流。默认允许，但系统可通过此接口禁用某进程的EXCLUSIVE权限
+
+**注册/注销流程**：
+
+```
+registerClient(pid, client)
+  → 创建NotificationClient(pid, binder)
+  → binder->linkToDeath(notificationClient)
+  → mNotificationClients[pid] = notificationClient
+
+registerClientStream(pid, serviceStream)
+  → getNotificationClient_l(pid)->registerClientStream(serviceStream)
+  → mStreams.insert(serviceStream)
+
+unregisterClientStream(pid, serviceStream)
+  → getNotificationClient_l(pid)->unregisterClientStream(serviceStream)
+  → mStreams.erase(serviceStream)
+```
+
+---
+
+#### 共享内存架构
+
+AAudio的零拷贝低延迟特性依赖精心设计的共享内存架构，涉及多个层次的内存抽象。
+
+**SharedRingBuffer — 核心环形缓冲区**：
+
+[`SharedRingBuffer`](frameworks/av/services/oboeservice/SharedRingBuffer.h)基于ashmem共享内存+FifoBufferIndirect实现跨进程环形缓冲区：
+
+**内存布局**：
+
+```
++-------------------+  offset 0 (SHARED_RINGBUFFER_READ_OFFSET)
+|  read_counter     |  sizeof(fifo_counter_t)
++-------------------+  offset sizeof(fifo_counter_t) (SHARED_RINGBUFFER_WRITE_OFFSET)
+|  write_counter    |  sizeof(fifo_counter_t)
++-------------------+  offset 2*sizeof(fifo_counter_t) (SHARED_RINGBUFFER_DATA_OFFSET)
+|                   |
+|  audio data       |  capacityInFrames * bytesPerFrame
+|                   |
++-------------------+
+```
+
+关键宏定义在[`SharedRingBuffer.h:37-39`](frameworks/av/services/oboeservice/SharedRingBuffer.h:37)：
+
+```c++
+#define SHARED_RINGBUFFER_READ_OFFSET   0
+#define SHARED_RINGBUFFER_WRITE_OFFSET  sizeof(fifo_counter_t)
+#define SHARED_RINGBUFFER_DATA_OFFSET   (SHARED_RINGBUFFER_WRITE_OFFSET + sizeof(fifo_counter_t))
+```
+
+**数据传输流程**：
+
+```mermaid
+graph LR
+    subgraph "Client进程"
+        ClientFifo["FifoBufferIndirect<br>mmap映射同一ashmem"]
+    end
+    subgraph "Service进程（audioserver）"
+        ServiceFifo["SharedRingBuffer<br>ashmem创建者"]
+    end
+    Ashmem["ashmem共享内存<br>read_counter + write_counter + data"]
+    ServiceFifo --> Ashmem
+    ClientFifo --> Ashmem
+```
+
+两端通过读写计数器协调数据位置，无需额外同步原语——读写分别原子更新各自counter，另一端polling读取。
+
+**fillParcelable跨进程传递**：
+
+[`SharedRingBuffer::fillParcelable()`](frameworks/av/services/oboeservice/SharedRingBuffer.h:47)将ashmem fd和偏移量填充到[`RingBufferParcelable`](frameworks/av/media/libaaudio/src/binding/RingBufferParcelable.h)，通过Binder传递给客户端：
+
+```
+fillParcelable(endpointParcelable, ringBufferParcelable)
+  → ringBufferParcelable.setSharedMemoryFD(ashmemFD)
+  → ringBufferParcelable.setReadCounterOffset(SHARED_RINGBUFFER_READ_OFFSET)
+  → ringBufferParcelable.setWriteCounterOffset(SHARED_RINGBUFFER_WRITE_OFFSET)
+  → ringBufferParcelable.setDataOffset(SHARED_RINGBUFFER_DATA_OFFSET)
+  → ringBufferParcelable.setBytesPerFrame(bytesPerFrame)
+  → ringBufferParcelable.setCapacityInFrames(capacityInFrames)
+```
+
+客户端收到Parcelable后，通过`mmap()`映射ashmem fd，直接读写共享内存中的音频数据。
+
+**SharedMemoryProxy与SharedMemoryWrapper**：
+
+| 类 | 路径 | 用途 |
+|----|------|------|
+| [`SharedMemoryProxy`](frameworks/av/services/oboeservice/SharedMemoryProxy.h) | oboeservice | 为MMAP流的audio data创建代理，处理跨进程内存映射 |
+| [`SharedMemoryWrapper`](frameworks/av/services/oboeservice/SharedMemoryWrapper.h) | oboeservice | 包装HAL提供的MMAP共享内存，提供统一读写接口 |
+
+`SharedMemoryWrapper`在`createMmapBuffer()`时设置，映射HAL层提供的audio_mmap_buffer_info中的共享内存，使oboeservice可以直接访问MMAP buffer。`SharedMemoryProxy`则在`exitStandby`时重建内存代理。
+
+**两种路径的共享内存使用对比**：
+
+| 维度 | MMAP路径 | SHARED路径 |
+|------|----------|------------|
+| 音频数据内存 | HAL提供的DSP共享内存 | SharedRingBuffer（ashmem） |
+| 消息队列 | SharedRingBuffer（ashmem） | SharedRingBuffer（ashmem） |
+| 混音缓冲区 | 无 | AAudioMixer内部buffer（非共享） |
+| 客户端访问方式 | mmap HAL fd | mmap ashmem fd |
+| 位置获取 | getMmapPosition() + MonotonicCounter | read/write counter计算 |
+
+---
+
+**oboeservice架构总结**：
+
+oboeservice的核心设计理念是**将延迟敏感的EXCLUSIVE路径与兼容性优先的SHARED路径分离**，通过统一的流状态机和命令队列确保线程安全，通过精心设计的共享内存架构实现零拷贝跨进程传输。EndpointManager的分离锁和Stealing机制解决了MMAP资源独占性带来的并发冲突，ClientTracker则通过Binder死亡通知保障了客户端异常退出时的资源回收。
 
 ---
 
@@ -1290,46 +2083,198 @@ flowchart TB
 
 ---
 
-## 2.9 MediaRecorder — 音视频录制
+## 2.9 MediaRecorder — 音视频录制深度解析
 
 ### 模块职责
 
-MediaRecorder提供音视频录制的高层API，内部通过AudioRecord采集PCM数据，经Codec编码后写入文件。
+MediaRecorder提供音视频录制的高层API，内部通过AudioRecord采集PCM数据，经Codec编码后写入文件。相比直接使用AudioRecord+MediaCodec的组合，MediaRecorder封装了完整的采集→编码→写文件流程，适合快速实现录音/录像功能。
 
-**源码位置**：[`MediaRecorder.java`](frameworks/base/media/java/android/media/MediaRecorder.java:101)
+**源码位置**：
+- Java层：[`MediaRecorder.java`](frameworks/base/media/java/android/media/MediaRecorder.java:101)
+- JNI层：[`android_media_MediaRecorder.cpp`](frameworks/base/media/jni/android_media_MediaRecorder.cpp)
+- Native层：[`mediarecorder.cpp`](frameworks/av/media/libmedia/mediarecorder.cpp)
+- Service层：[`MediaRecorderService.cpp`](frameworks/av/media/libmediaplayerservice/MediaRecorderService.cpp)
 
-### 与AudioRecord的关系
+### 完整音频录制数据路径
 
 ```mermaid
 flowchart TB
-    subgraph "MediaRecorder内部音频路径"
-        MR["MediaRecorder.java"] --> NMR["Native MediaRecorder"]
-        NMR --> MRS["MediaRecorderService"]
-        MRS --> AR["AudioRecord（内部创建）"]
-        AR -->|"PCM数据"| CODEC["Codec（编码）"]
-        CODEC --> FILE["写入文件/网络流"]
+    subgraph "App层"
+        APP["App代码"] --> MR_J["MediaRecorder.java<br>setAudioSource/setOutputFormat/setAudioEncoder"]
     end
 
-    subgraph "MediaRecorder状态机"
-        INIT["INITIAL"] -->|"setAudioSource（）"| SRC_SET["DATASOURCE_CONFIGURED"]
-        SRC_SET -->|"setOutputFormat（）"| SRC_SET
-        SRC_SET -->|"setAudioEncoder（）"| SRC_SET
-        SRC_SET -->|"prepare（）"| PREPARED2["PREPARED"]
-        PREPARED2 -->|"start（）"| RECORDING["RECORDING"]
-        RECORDING -->|"stop（）"| SRC_SET
+    subgraph "Java→Native桥接"
+        MR_J -->|"JNI native_setup"| MR_N["Native MediaRecorder<br>（libmedia）"]
+    end
+
+    subgraph "MediaRecorderService（mediaserver进程）"
+        MR_N -->|"Binder IPC<br>IMediaRecorder"| MRS["MediaRecorderService"]
+        MRS --> RC["RecorderClient<br>（管理录制生命周期）"]
+        RC --> WC["StagefrightRecorder<br>（录制引擎核心）"]
+    end
+
+    subgraph "音频采集→编码→写文件"
+        WC -->|"创建AudioSource"| AS["AudioSource<br>（内含AudioRecord）"]
+        AS -->|"PCM帧"| AR_INT["AudioRecord<br>（从HAL采集）"]
+        AR_INT -->|"共享内存<br>RecordThread"| AF_R["AudioFlinger"]
+        AF_R -->|"HAL read"| HAL_IN["StreamInHal"]
+        AS -->|"PCM数据"| ENC["MediaCodec编码器<br>（OMX/软编）"]
+        ENC -->|"编码帧"| MW["MPEG4Writer/AMRWriter<br>（容器封装+写文件）"]
+        MW --> FILE["输出文件<br>（MP4/3GP/AMR/AAC/OGG）"]
     end
 ```
 
-**AudioSource类型**:
-| AudioSource | 用途 | 说明 |
-|-------------|------|------|
-| DEFAULT | 默认 | 自动选择 |
-| MIC | 麦克风 | 直接采集 |
-| VOICE_UPLINK/DOWNLINK | 通话上行/下行 | 需要权限 |
-| VOICE_CALL | 通话双向 | 需要权限 |
-| CAMCORDER | 摄像头同步 | 随摄像头 |
-| VOICE_RECOGNITION | 语音识别 | 优化降噪 |
-| VOICE_COMMUNICATION | VoIP通话 | AEC+NS |
+**数据流核心**：StagefrightRecorder内部创建AudioSource，AudioSource持有AudioRecord实例从AudioFlinger采集PCM，经MediaCodec编码后由MPEG4Writer等写入容器文件。
+
+### MediaRecorderService架构详解
+
+```mermaid
+flowchart TB
+    subgraph "Client端（App进程）"
+        MR_J2["MediaRecorder.java"] --> NM["Native MediaRecorder"]
+    end
+
+    subgraph "Server端（mediaserver进程）"
+        NM -->|"Binder: IMediaRecorder"| MRS2["MediaRecorderService"]
+        MRS2 -->|"createRecorder"| RC2["RecorderClient<br>（BnMediaRecorder）"]
+        RC2 --> SFR["StagefrightRecorder"]
+        SFR --> AUDIO_SRC["AudioSource<br>setAudioSource配置"]
+        SFR --> VIDEO_SRC["CameraSource<br>（视频源）"]
+        SFR --> CODEC_CFG["编码器配置<br>setAudioEncoder/setVideoEncoder"]
+        SFR --> WRITER_CFG["Writer配置<br>setOutputFormat"]
+    end
+
+    subgraph "AudioSource内部"
+        AUDIO_SRC --> AR2["AudioRecord<br>（实际PCM采集）"]
+        AR2 --> PCM_BUF["PCM Buffer"]
+        PCM_BUF --> ENCODER2["Encoder<br>（OMX Component）"]
+    end
+```
+
+**RecorderClient关键职责**：
+
+| 组件 | 职责 | 关键方法 |
+|------|------|---------|
+| RecorderClient | 管理录制生命周期，响应Binder调用 | `start/stop/pause/resume` |
+| StagefrightRecorder | 录制引擎核心，协调Source/Encoder/Writer | `prepare/start/stop/pause/resume` |
+| AudioSource | 封装AudioRecord，提供PCM数据流 | `read/start/stop/setInputDevice` |
+| MPEG4Writer | MP4/3GP容器封装，交织音视频轨道 | `addSource/start/stop/pause/resume` |
+| AMRWriter | AMR-NB/WB裸流写入 | `addSource/start/stop` |
+| AACWriter | AAC ADTS帧序列写入 | `addSource/start/stop` |
+
+### 完整状态机（含Native层状态映射）
+
+```mermaid
+flowchart TB
+    INIT["INITIAL<br>（new后）"] -->|"setAudioSource<br>/setVideoSource"| DS_CFG["DATASOURCE_CONFIGURED<br>Native: INITIALIZED"]
+    DS_CFG -->|"setOutputFormat"| DS_CFG
+    DS_CFG -->|"setAudioEncoder<br>/setVideoEncoder"| DS_CFG
+    DS_CFG -->|"setOutputFile<br>/setNextOutputFile"| DS_CFG
+    DS_CFG -->|"prepare（）"| PREPARED["PREPARED<br>Native: PREPARED"]
+    PREPARED -->|"start（）"| RECORDING["RECORDING<br>Native: RECORDING"]
+    RECORDING -->|"pause（）"| PAUSED["PAUSED<br>（仍在RECORDING状态内）"]
+    PAUSED -->|"resume（）"| RECORDING
+    RECORDING -->|"stop（）"| IDLE_STOP["IDLE<br>（需重新配置）"]
+    ERROR_STATE["ERROR<br>（任意状态可进入）"] -->|"reset（）"| INIT
+    ANY_STATE["任意状态"] -->|"reset（）"| INIT
+    INIT -->|"release（）"| END["END（终态）"]
+```
+
+**Native层状态检查逻辑**（[`mediarecorder.cpp:150-624`](frameworks/av/media/libmedia/mediarecorder.cpp:150)）：
+
+| Java API | Native前置状态检查 | 状态转换 |
+|----------|-------------------|---------|
+| `setAudioSource` | INITIALIZED | → INITIALIZED + mIsAudioSourceSet=true |
+| `setOutputFormat` | INITIALIZED | → DATASOURCE_CONFIGURED |
+| `setAudioEncoder` | DATASOURCE_CONFIGURED + AudioSource已设 | → DATASOURCE_CONFIGURED |
+| `prepare` | DATASOURCE_CONFIGURED + Source/Encoder匹配 | → PREPARED |
+| `start` | PREPARED | → RECORDING |
+| `stop` | RECORDING | → IDLE（调用doCleanUp） |
+| `pause/resume` | RECORDING | → 保持RECORDING |
+
+> **关键设计**：`stop()`后回到IDLE而非DATASOURCE_CONFIGURED，需完全重新配置（setAudioSource→setOutputFormat→...）。这与MediaPlayer的stop→STOPPED可重新prepare不同。
+
+### 关键API使用模式 — 典型录音流程
+
+```java
+// 1. 创建与配置AudioSource
+MediaRecorder recorder = new MediaRecorder(context);
+recorder.setAudioSource(MediaRecorder.AudioSource.MIC);  // 必须第一个设置
+
+// 2. 配置输出格式与编码器
+recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+recorder.setAudioEncodingBitRate(128000);   // AAC 128kbps
+recorder.setAudioSamplingRate(44100);        // 44.1kHz
+recorder.setAudioChannels(2);                // 立体声
+
+// 3. 设置输出文件并准备
+recorder.setOutputFile(outputFile);
+recorder.prepare();
+
+// 4. 开始/暂停/恢复/停止
+recorder.start();
+// ... 录制中 ...
+recorder.pause();   // API 24+
+recorder.resume();  // API 24+
+recorder.stop();    // stop后需重新配置
+
+// 5. 释放资源（必须）
+recorder.release();
+```
+
+> **prepare()内部逻辑**（[`MediaRecorder.java:1298-1321`](frameworks/base/media/java/android/media/MediaRecorder.java:1298)）：先将mPath/mFd/mFile转为FileDescriptor调用`_setOutputFile()`，再调用`_prepare()`触发Native侧的StagefrightRecorder初始化AudioSource+Encoder+Writer。
+
+### AudioSource与AudioRecord的映射关系
+
+MediaRecorder的AudioSource直接映射为AudioRecord的内部source常量：
+
+| MediaRecorder.AudioSource | 值 | 对应AudioRecord行为 | HAL预处理 | 典型场景 |
+|--------------------------|-----|---------------------|----------|---------|
+| `DEFAULT` | 0 | 等同MIC | AGC+AEC+NS | 默认录音 |
+| `MIC` | 1 | 标准麦克风采集 | AGC+AEC+NS | 语音备忘 |
+| `VOICE_UPLINK` | 2 | 通话上行（需CAPTURE_AUDIO_OUTPUT） | 无 | 通话录音 |
+| `VOICE_DOWNLINK` | 3 | 通话下行（需CAPTURE_AUDIO_OUTPUT） | 无 | 通话录音 |
+| `VOICE_CALL` | 4 | 通话双向（需CAPTURE_AUDIO_OUTPUT） | 无 | 通话录音 |
+| `CAMCORDER` | 5 | 随摄像头同步，最少预处理 | 最少预处理 | 视频录制 |
+| `VOICE_RECOGNITION` | 6 | 关闭AGC，保留原始音量 | 关闭AGC+AEC | 语音识别 |
+| `VOICE_COMMUNICATION` | 7 | 启用AEC+NS，极低延迟 | AEC+NS | VoIP通话录制 |
+| `REMOTE_SUBMIX` | 8 | 投屏捕获（需系统权限） | 无 | 投屏录制 |
+| `UNPROCESSED` | 9 | 无任何信号处理 | 无预处理 | 专业录音 |
+| `VOICE_PERFORMANCE` | 10 | 最小延迟，播放耦合 | 无 | 卡拉OK/实时表演 |
+
+> **隐私敏感标记**（[`MediaRecorder.java:752-789`](frameworks/base/media/java/android/media/MediaRecorder.java:752)）：`VOICE_COMMUNICATION`和`CAMCORDER`默认标记为隐私敏感，禁止并发采集。可通过`setPrivacySensitive()`显式覆盖。
+
+### 文件输出格式与编码器组合表
+
+| OutputFormat | 值 | 推荐AudioEncoder | 容器类型 | 支持视频 | 采样率约束 |
+|-------------|-----|-----------------|---------|---------|-----------|
+| `THREE_GPP` | 1 | AMR_NB / AMR_WB | 3GP | 是 | AMR: 8k/16kHz |
+| `MPEG_4` | 2 | AAC / HE_AAC | MP4 | 是 | AAC: 8-96kHz |
+| `AMR_NB` | 3 | AMR_NB | AMR裸流 | 否 | 固定8kHz |
+| `AMR_WB` | 4 | AMR_WB | AMR裸流 | 否 | 固定16kHz |
+| `AAC_ADTS` | 6 | AAC / HE_AAC | AAC帧序列 | 否 | 8-96kHz |
+| `MPEG_2_TS` | 8 | AAC | MPEG2-TS | 是 | 8-96kHz |
+| `WEBM` | 9 | VORBIS / OPUS | WebM | 是 | Vorbis: 8-48kHz |
+| `OGG` | 11 | OPUS | Ogg | 否 | Opus: 8-48kHz |
+
+> **编码器与格式不匹配的后果**：例如对AMR_NB格式设置AAC编码器，prepare()将失败。Native层`StagefrightRecorder`在`prepareInternal()`中会检查格式兼容性。
+
+### 与MediaCodec录音的对比
+
+| 维度 | MediaRecorder | AudioRecord + MediaCodec |
+|------|-------------|------------------------|
+| 封装层次 | 高层一站式封装 | 底层自由组合 |
+| 采集 | 内部创建AudioRecord | App自行创建AudioRecord |
+| 编码 | 内部自动创建编码器 | App自行配置MediaCodec编码 |
+| 写文件 | 内部Writer自动封装容器 | App自行写MPEG4Writer或原始PCM |
+| 灵活性 | 低，固定流程 | 高，可自定义每一步 |
+| 实时处理 | 不支持（数据直接进编码器） | 支持PCM中间处理（如降噪/变声） |
+| 延迟 | 较高（完整pipeline） | 可控（直接操作AudioRecord） |
+| 适用场景 | 简单录音/录像 | 自定义编码、实时音频处理 |
+| 错误恢复 | reset()后重新配置 | 各组件独立处理 |
+
+> **典型选择策略**：只需保存录音文件→MediaRecorder；需要实时处理PCM数据或自定义编码→AudioRecord+MediaCodec。
 
 ---
 

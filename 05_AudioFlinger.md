@@ -204,7 +204,7 @@ for (const auto& track : activeTracks) {
 
 ```mermaid
 sequenceDiagram
-    participant Client as AudioTrack(Native)
+    participant Client as AudioTrack（Native）
     participant AF as AudioFlinger
     participant APM as AudioPolicyManager
     participant Thread as PlaybackThread
@@ -559,10 +559,10 @@ flowchart TB
 
 ```mermaid
 sequenceDiagram
-    participant App as App(应用)
-    participant AT_J as AudioTrack(Java)
+    participant App as App（应用）
+    participant AT_J as AudioTrack（Java）
     participant JNI as JNI Bridge
-    participant AT_N as AudioTrack(Native)
+    participant AT_N as AudioTrack（Native）
     participant AF as AudioFlinger
     participant APS as AudioPolicyService
     participant APM as AudioPolicyManager
@@ -771,6 +771,485 @@ classDiagram
 | `Dyn` | HIGH/VERY_HIGH | 最高 | 多相FIR滤波(动态系数) | 专业音频/HiFi |
 
 > **性能关键路径**: AudioMixer.process()在每个混音周期执行(NormalMixer ~20ms, FastMixer ~10ms)，是音频系统CPU消耗最大的路径。Hook机制+SIMD优化(NEON)确保实时性。
+
+
+## 5.12 DeviceEffectManager — 设备级音效管理
+
+**职责**: 管理绑定到特定音频输出设备（而非Audio Session）的音效，在音频Patch创建时自动激活设备级音效代理。
+
+**源码位置**: [`DeviceEffectManager.h`](frameworks/av/services/audioflinger/DeviceEffectManager.h) / [`DeviceEffectManager.cpp`](frameworks/av/services/audioflinger/DeviceEffectManager.cpp)
+
+### 5.12.1 架构概述
+
+[`DeviceEffectManager`](frameworks/av/services/audioflinger/DeviceEffectManager.h:23) 继承自 [`PatchCommandThread::PatchCommandListener`](frameworks/av/services/audioflinger/PatchCommandThread.h:35)，监听Patch的创建与释放事件，在设备路由变化时自动管理音效的激活与去激活。与Session级EffectChain不同，设备级音效绑定到硬件输出设备，不随Track销毁而移除。
+
+| 核心成员 | 类型 | 说明 |
+|---------|------|------|
+| [`mDeviceEffects`](frameworks/av/services/audioflinger/DeviceEffectManager.h:72) | `map<AudioDeviceTypeAddr, sp<DeviceEffectProxy>>` | 设备地址→音效代理映射 |
+| [`mMyCallback`](frameworks/av/services/audioflinger/DeviceEffectManager.h:71) | `sp<DeviceEffectManagerCallback>` | 音效回调接口 |
+| [`mAudioFlinger`](frameworks/av/services/audioflinger/DeviceEffectManager.h:70) | `AudioFlinger&` | 所属AudioFlinger引用 |
+
+| 核心方法 | 说明 |
+|---------|------|
+| [`createEffect_l()`](frameworks/av/services/audioflinger/DeviceEffectManager.h:33) | 创建设备级音效，关联到指定AudioDeviceTypeAddr |
+| [`removeEffect()`](frameworks/av/services/audioflinger/DeviceEffectManager.h:43) | 移除指定的DeviceEffectProxy |
+| [`onCreateAudioPatch()`](frameworks/av/services/audioflinger/DeviceEffectManager.h:62) | Patch创建回调，激活匹配设备的音效代理 |
+| [`onReleaseAudioPatch()`](frameworks/av/services/audioflinger/DeviceEffectManager.h:64) | Patch释放回调，去激活相关音效代理 |
+| [`createEffectHal()`](frameworks/av/services/audioflinger/DeviceEffectManager.h:44) | 创建HAL层音效实例 |
+
+### 5.12.2 DeviceEffectProxy工作机制
+
+DeviceEffectProxy是设备级音效的代理对象，每个`AudioDeviceTypeAddr`对应一个Proxy。当Patch创建且路由到对应设备时，Proxy自动创建真实的HAL音效实例并激活；Patch释放时自动销毁HAL实例。
+
+### 5.12.3 设备级 vs Session级音效对比
+
+| 维度 | 设备级音效(DeviceEffect) | Session级音效(EffectChain) |
+|------|------------------------|--------------------------|
+| 绑定对象 | 硬件输出设备(AudioDeviceTypeAddr) | Audio Session |
+| 生命周期 | 跟随设备路由，不随Track销毁 | 跟随Track/Session生命周期 |
+| 激活时机 | Patch创建→onCreateAudioPatch | Track添加到EffectChain |
+| 典型场景 | 外接DAC音效、扬声器校准 | 均衡器、混响、重低音 |
+| 管理类 | DeviceEffectManager | EffectChain |
+
+### 5.12.4 设备音效激活流程
+
+```mermaid
+flowchart TB
+    A[AudioPolicyService创建Patch] --> B[PatchPanel.createAudioPatch]
+    B --> C[PatchCommandThread.createAudioPatchCommand]
+    C --> D[PatchCommandThread.threadLoop分发]
+    D --> E[DeviceEffectManager.onCreateAudioPatch]
+    E --> F{mDeviceEffects中查找<br/>匹配设备的Proxy}
+    F -->|找到| G[DeviceEffectProxy创建HAL Effect实例]
+    G --> H[音效激活并应用到输出链路]
+    F -->|未找到| I[无操作]
+```
+
+---
+
+## 5.13 MelReporter — MEL声暴露报告
+
+**职责**: 监听音频Patch创建/释放，启动MEL(Maximum Exposure Level)计算，实现IEC 62368-1/EN 50332-3听力保护标准。
+
+**源码位置**: [`MelReporter.h`](frameworks/av/services/audioflinger/MelReporter.h) / [`MelReporter.cpp`](frameworks/av/services/audioflinger/MelReporter.cpp)
+
+### 5.13.1 双路径架构
+
+MelReporter支持两种MEL计算路径，HAL优先，框架回退：
+
+| 路径 | 方法 | 说明 | 认证保证 |
+|------|------|------|---------|
+| HAL SoundDose | [`activateHalSoundDoseComputation()`](frameworks/av/services/audioflinger/MelReporter.h:53) | 从`IModule.getSoundDose()`获取HAL接口 | 可认证 |
+| 内部CSD计算 | [`activateInternalSoundDoseComputation()`](frameworks/av/services/audioflinger/MelReporter.h:62) | 框架回退方案，不保证认证 | 不可认证 |
+
+```mermaid
+flowchart TB
+    A[Patch创建] --> B[MelReporter.onCreateAudioPatch]
+    B --> C{HAL支持SoundDose?}
+    C -->|是| D[activateHalSoundDoseComputation]
+    D --> E[IModule.getSoundDose获取HAL接口]
+    E --> F[HAL负责MEL计算]
+    C -->|否| G[activateInternalSoundDoseComputation]
+    G --> H[SoundDoseManager启动MelProcessor]
+    H --> I[框架内部计算MEL值]
+```
+
+### 5.13.2 CSD计算过滤规则
+
+[`updateMetadataForCsd()`](frameworks/av/services/audioflinger/MelReporter.h:78) 根据Track的AudioUsage决定是否启用CSD计算。仅`MEDIA`和`GAME` usage触发CSD计算，其他类型（如VOICE_CALL、ALARM）不纳入声剂量统计。
+
+| 核心成员 | 类型 | 说明 |
+|---------|------|------|
+| [`mSoundDoseManager`](frameworks/av/services/audioflinger/MelReporter.h:105) | `sp<SoundDoseManager>` | CSD计算管理器 |
+| [`mActiveMelPatches`](frameworks/av/services/audioflinger/MelReporter.h:81) | `vector<ActiveMelPatch>` | 当前活跃的MEL Patch列表 |
+
+| 核心方法 | 说明 |
+|---------|------|
+| [`onCreateAudioPatch()`](frameworks/av/services/audioflinger/MelReporter.h:69) | Patch创建回调，启动MEL计算 |
+| [`onReleaseAudioPatch()`](frameworks/av/services/audioflinger/MelReporter.h:71) | Patch释放回调，停止MEL计算 |
+| [`updateMetadataForCsd()`](frameworks/av/services/audioflinger/MelReporter.h:78) | 更新Track元数据，决定CSD是否启用 |
+| [`shouldComputeMelForDeviceType()`](frameworks/av/services/audioflinger/MelReporter.h:88) | 判断设备类型是否需要MEL计算 |
+
+### 5.13.3 关键阈值参数
+
+| 参数 | 值 | 说明 |
+|------|---|------|
+| [`kDefaultRs2UpperBound`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:40) | 100 dBA | RS2默认上限，可设置范围80-100 dBA |
+| [`kCsdWindowSeconds`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:38) | 604800 (7天) | CSD滚动窗口时长 |
+| [`kMaxTimestampDeltaInSec`](frameworks/av/services/audioflinger/MelReporter.h:26) | 120秒 | 最大时间戳差值 |
+
+### 5.13.4 MEL计算启动流程
+
+```mermaid
+sequenceDiagram
+    participant PP as PatchPanel
+    participant PCT as PatchCommandThread
+    participant MR as MelReporter
+    participant SDM as SoundDoseManager
+    participant MP as MelProcessor
+
+    PP->>PCT: createAudioPatchCommand
+    PCT->>MR: onCreateAudioPatch
+    MR->>MR: shouldComputeMelForDeviceType
+    alt HAL SoundDose可用
+        MR->>MR: activateHalSoundDoseComputation
+    else 使用内部计算
+        MR->>SDM: getOrCreateProcessorForDevice
+        SDM->>MP: 创建MelProcessor实例
+        MP-->>SDM: MEL计算回调
+    end
+```
+
+---
+
+## 5.14 SoundDoseManager — CSD声剂量管理
+
+**职责**: 管理CSD(Concurrent Sound Dose)计算和回调通知，聚合7天窗口内的声暴露量，在超过RS2阈值时通知AudioService降低音量。
+
+**源码位置**: [`SoundDoseManager.h`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h) / [`SoundDoseManager.cpp`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.cpp)
+
+### 5.14.1 类关系图
+
+```mermaid
+classDiagram
+    class SoundDoseManager {
+        -mMelAggregator : MelAggregator
+        -mRs2UpperBound : float
+        -mProcessors : map
+        +getOrCreateProcessorForDevice()
+        +removeStreamProcessor()
+        +setOutputRs2UpperBound()
+        +getSoundDoseInterface()
+        +setHalSoundDoseInterface()
+        +onNewMelValues()
+        +onMomentaryExposure()
+    }
+    class MelProcessor {
+        +process()
+        +setSampleRate()
+        +setAttenuation()
+    }
+    class MelAggregator {
+        +aggregate()
+        +getCsd()
+        +reset()
+    }
+    class SoundDose {
+        +setOutputRs2UpperBound()
+        +resetCsd()
+        +getCsd()
+    }
+    class ISoundDoseCallback {
+        +onMomentaryExposureWarning()
+        +onNewCsdValue()
+    }
+    SoundDoseManager --> MelProcessor : 每设备每流创建
+    SoundDoseManager --> MelAggregator : 7天窗口聚合
+    SoundDoseManager --> SoundDose : BnSoundDose实现
+    SoundDoseManager --> ISoundDoseCallback : 超限回调
+    MelProcessor --> SoundDoseManager : MelCallback
+```
+
+### 5.14.2 核心方法
+
+| 方法 | 说明 |
+|------|------|
+| [`getOrCreateProcessorForDevice()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:57) | 为指定设备和流创建/获取MelProcessor |
+| [`removeStreamProcessor()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:68) | 移除流的MelProcessor |
+| [`setOutputRs2UpperBound()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:76) | 设置RS2上限阈值(80-100 dBA) |
+| [`getSoundDoseInterface()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:84) | 获取ISoundDose AIDL接口 |
+| [`onNewMelValues()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:118) | MelCallback：新MEL值回调 |
+| [`onMomentaryExposure()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:121) | MelCallback：瞬时暴露超限回调 |
+
+### 5.14.3 ISoundDose AIDL接口
+
+[`SoundDose`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:124) 内部类实现了`BnSoundDose`接口，供AudioService查询和配置声剂量参数：
+
+| 接口方法 | 说明 |
+|---------|------|
+| [`setOutputRs2UpperBound()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:135) | 设置RS2上限 |
+| [`resetCsd()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:136) | 重置CSD累计值 |
+| [`getCsd()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:142) | 查询当前CSD值 |
+| [`setCsdEnabled()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:140) | 启用/禁用CSD计算 |
+| [`updateAttenuation()`](frameworks/av/services/audioflinger/sounddose/SoundDoseManager.h:138) | 更新衰减值 |
+
+### 5.14.4 听力保护触发流程
+
+```mermaid
+flowchart TB
+    A[MelProcessor每帧计算MEL值] --> B{MEL大于RS2阈值?}
+    B -->|是| C[onMomentaryExposure回调]
+    C --> D[ISoundDoseCallback.onMomentaryExposureWarning]
+    D --> E[AudioService收到通知]
+    E --> F[降低音量/弹出警告通知]
+    A --> G[onNewMelValues回调]
+    G --> H[MelAggregator聚合7天窗口]
+    H --> I{CSD超过安全阈值?}
+    I -->|是| J[ISoundDoseCallback.onNewCsdValue]
+    J --> K[AudioService更新声剂量状态]
+```
+
+---
+
+## 5.15 PatchCommandThread — Patch异步命令线程
+
+**职责**: 异步执行`createAudioPatch`和`releaseAudioPatch`命令，避免PatchPanel操作与音效管理之间的死锁。
+
+**源码位置**: [`PatchCommandThread.h`](frameworks/av/services/audioflinger/PatchCommandThread.h) / [`PatchCommandThread.cpp`](frameworks/av/services/audioflinger/PatchCommandThread.cpp)
+
+### 5.15.1 为什么需要异步
+
+[`PatchPanel::createAudioPatch()`](frameworks/av/services/audioflinger/PatchCommandThread.h:25) 从AudioPolicyService调用时持有APM锁，但音效管理（DeviceEffectManager/MelReporter）需要回调APM获取音效信息。如果同步回调会导致**死锁**：
+- 线程A：持有APM锁 → 等待音效管理完成
+- 线程B（音效管理）：需要APM锁 → 等待线程A释放
+
+解决方案：PatchCommandThread将Patch操作放入队列异步执行，回调在独立线程完成，避免锁交叉。
+
+### 5.15.2 命令类型与数据结构
+
+| 命令类型 | 枚举值 | 数据类 | 说明 |
+|---------|-------|--------|------|
+| [`CREATE_AUDIO_PATCH`](frameworks/av/services/audioflinger/PatchCommandThread.h:31) | 0 | [`CreateAudioPatchData`](frameworks/av/services/audioflinger/PatchCommandThread.h:76) | 包含handle和Patch |
+| [`RELEASE_AUDIO_PATCH`](frameworks/av/services/audioflinger/PatchCommandThread.h:32) | 1 | [`ReleaseAudioPatchData`](frameworks/av/services/audioflinger/PatchCommandThread.h:85) | 仅包含handle |
+
+```mermaid
+classDiagram
+    class Command {
+        +mCommand : int
+        +mData : CommandData
+    }
+    class CommandData {
+        <<abstract>>
+    }
+    class CreateAudioPatchData {
+        +mHandle : audio_patch_handle_t
+        +mPatch : Patch
+    }
+    class ReleaseAudioPatchData {
+        +mHandle : audio_patch_handle_t
+    }
+    class PatchCommandListener {
+        <<interface>>
+        +onCreateAudioPatch()
+        +onReleaseAudioPatch()
+    }
+    Command --> CommandData
+    CommandData <|-- CreateAudioPatchData
+    CommandData <|-- ReleaseAudioPatchData
+    PatchCommandListener <|.. DeviceEffectManager
+    PatchCommandListener <|.. MelReporter
+```
+
+### 5.15.3 Listener模式
+
+[`PatchCommandListener`](frameworks/av/services/audioflinger/PatchCommandThread.h:35) 接口定义了两个回调方法，当前有两个Listener实现：
+
+| Listener | 类 | 说明 |
+|----------|---|------|
+| 设备音效 | [`DeviceEffectManager`](frameworks/av/services/audioflinger/DeviceEffectManager.h:23) | Patch创建时激活设备级音效 |
+| 声暴露 | [`MelReporter`](frameworks/av/services/audioflinger/MelReporter.h:32) | Patch创建时启动MEL计算 |
+
+### 5.15.4 Patch命令异步处理时序
+
+```mermaid
+sequenceDiagram
+    participant APM as AudioPolicyService
+    participant PP as PatchPanel
+    participant PCT as PatchCommandThread
+    participant DEM as DeviceEffectManager
+    participant MR as MelReporter
+
+    APM->>PP: createAudioPatch-持有APM锁
+    PP->>PP: 执行Patch创建
+    PP->>PCT: createAudioPatchCommand-入队
+    APM->>APM: 释放APM锁
+
+    PCT->>PCT: threadLoop取出命令
+    PCT->>DEM: onCreateAudioPatch
+    DEM->>DEM: 激活设备级音效-可安全回调APM
+    PCT->>MR: onCreateAudioPatch
+    MR->>MR: 启动MEL计算
+```
+
+### 5.15.5 关键成员
+
+| 成员 | 类型 | 说明 |
+|------|------|------|
+| [`mCommands`](frameworks/av/services/audioflinger/PatchCommandThread.h:98) | `deque<sp<Command>>` | 待处理命令队列 |
+| [`mWaitWorkCV`](frameworks/av/services/audioflinger/PatchCommandThread.h:97) | `condition_variable` | 线程等待条件变量 |
+| [`mListeners`](frameworks/av/services/audioflinger/PatchCommandThread.h:101) | `vector<sp<PatchCommandListener>>` | 已注册的Listener列表 |
+
+---
+
+## 5.16 BufLog — 缓冲区调试日志
+
+**职责**: 将音频缓冲区PCM数据dump到磁盘文件，用于调试音效处理结果、验证PCM数据正确性、排查杂音问题。
+
+**源码位置**: [`BufLog.h`](frameworks/av/services/audioflinger/BufLog.h) / [`BufLog.cpp`](frameworks/av/services/audioflinger/BufLog.cpp)
+
+### 5.16.1 BUFLOG宏
+
+[`BUFLOG`](frameworks/av/services/audioflinger/BufLog.h:88) 宏是核心接口，参数说明：
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `STREAMID` | int [0-15] | 流ID，最多16个流同时捕获 |
+| `TAG` | char* | 标签字符串，用于文件名和日志 |
+| `FORMAT` | int | 音频格式(audio_format_t) |
+| `CHANNELS` | int | 通道数 |
+| `SAMPLINGRATE` | int | 采样率(Hz) |
+| `MAXBYTES` | int | 文件最大字节数，0为不限 |
+| `BUF` | void* | 音频缓冲区指针 |
+| `SIZE` | int | 当前缓冲区字节数 |
+
+### 5.16.2 文件命名与存储
+
+文件命名格式：`YYYYMMDDHHMMSS_id_format_channels_samplingrate.raw`
+
+存储路径：[`/data/misc/audioserver`](frameworks/av/services/audioflinger/BufLog.h:110)
+
+生成的文件为原始PCM数据，可用Audacity等工具以对应格式导入分析。
+
+### 5.16.3 Release版本控制
+
+[`BUFLOG_NDEBUG`](frameworks/av/services/audioflinger/BufLog.h:69) 宏控制是否启用BufLog：
+- Release版本（`NDEBUG=1`）：`BUFLOG_NDEBUG=1`，BUFLOG宏展开为空操作
+- Debug版本（`NDEBUG未定义`）：`BUFLOG_NDEBUG=0`，BUFLOG宏正常工作
+- 可在源文件顶部手动`#define BUFLOG_NDEBUG 0`强制启用
+
+### 5.16.4 其他宏
+
+| 宏 | 说明 |
+|---|------|
+| [`BUFLOG_EXISTS`](frameworks/av/services/audioflinger/BufLog.h:94) | 检查BufLog单例是否存在 |
+| [`BUFLOG_RESET`](frameworks/av/services/audioflinger/BufLog.h:98) | 停止捕获并关闭所有流，后续BUFLOG调用创建新流 |
+
+### 5.16.5 使用示例
+
+```cpp
+// 在音效处理代码中添加：
+#define BUFLOG_NDEBUG 0    // 强制启用
+#include "BufLog.h"
+
+// 在音效处理函数中dump输出缓冲区
+int format       = mConfig.outputCfg.format;
+int channels     = audio_channel_count_from_out_mask(mConfig.outputCfg.channels);
+int samplingRate = mConfig.outputCfg.samplingRate;
+int frameCount   = mConfig.outputCfg.buffer.frameCount;
+int frameSize    = audio_bytes_per_sample((audio_format_t)format) * channels;
+int buffSize     = frameCount * frameSize;
+long maxBytes    = 10 * samplingRate * frameSize;  // 最多10秒
+BUFLOG(11, "loudness_enhancer_out", format, channels, samplingRate,
+       maxBytes, mConfig.outputCfg.buffer.raw, buffSize);
+```
+
+### 5.16.6 典型调试场景
+
+```mermaid
+flowchart LR
+    A[音效处理前] --> B[BUFLOG捕获输入PCM]
+    B --> C[音效处理]
+    C --> D[BUFLOG捕获输出PCM]
+    D --> E[对比输入输出RAW文件]
+    E --> F{验证音效是否正确工作}
+    F -->|杂音| G[检查PCM数据异常]
+    F -->|无声| H[检查音效是否 bypass]
+    F -->|正常| I[调试完成]
+```
+
+---
+
+## 5.17 SpatializerThread与BitPerfectThread — 特殊输出线程
+
+**源码位置**: [`Threads.h`](frameworks/av/services/audioflinger/Threads.h) / [`Threads.cpp`](frameworks/av/services/audioflinger/Threads.cpp)
+
+### 5.17.1 SpatializerThread — 空间音频处理线程
+
+[`SpatializerThread`](frameworks/av/services/audioflinger/Threads.h:1836) 继承自MixerThread，专门处理空间音频（Spatial Audio）音效。
+
+**触发条件**: `AUDIO_OUTPUT_FLAG_SPATIALIZER`标志位打开时，AudioFlinger创建SpatializerThread而非普通MixerThread。
+
+**核心特性**:
+- 从MixerThread分离出来，专门处理Spatializer音效链
+- 拥有独立的mixer配置（`mixerConfig`参数）
+- 包含[`mFinalDownMixer`](frameworks/av/services/audioflinger/Threads.h:1860)：最终下混音效Handle，将多声道空间音频下混到立体声
+- 支持延迟模式设置[`setRequestedLatencyMode()`](frameworks/av/services/audioflinger/Threads.h:1850)
+- 与HeadTracker配合实现头部追踪空间音频
+
+| 核心成员 | 类型 | 说明 |
+|---------|------|------|
+| [`mRequestedLatencyMode`](frameworks/av/services/audioflinger/Threads.h:1858) | `audio_latency_mode_t` | 请求的延迟模式，默认FREE |
+| [`mFinalDownMixer`](frameworks/av/services/audioflinger/Threads.h:1860) | `sp<EffectHandle>` | 最终下混音效Handle |
+
+### 5.17.2 BitPerfectThread — 位完美输出线程
+
+[`BitPerfectThread`](frameworks/av/services/audioflinger/Threads.h:2359) 继承自MixerThread，是AOSP14新增的线程类型，满足车载HiFi场景下原始音频数据直传HAL/DSP的需求。
+
+**触发条件**: `AUDIO_OUTPUT_FLAG_BIT_PERFECT`标志位打开时创建。
+
+**核心特性**:
+- 不修改PCM数据格式、位深、采样率
+- 仅当活跃Track数为1且Track标记为bit-perfect时启用直传模式
+- 直传模式：Track PCM数据通过TEE_BUFFER直接拷贝到SinkBuffer，跳过Mixer
+- 多Track时回退到普通Mixer混音模式
+
+| 核心成员 | 类型 | 说明 |
+|---------|------|------|
+| [`mIsBitPerfect`](frameworks/av/services/audioflinger/Threads.h:2369) | `bool` | 当前是否为bit-perfect直传模式 |
+| [`mVolumeLeft`](frameworks/av/services/audioflinger/Threads.h:2370) | `float` | 左声道音量 |
+| [`mVolumeRight`](frameworks/av/services/audioflinger/Threads.h:2371) | `float` | 右声道音量 |
+
+### 5.17.3 BitPerfectThread关键逻辑
+
+[`prepareTracks_l()`](frameworks/av/services/audioflinger/Threads.cpp:11037) 中的bit-perfect判断逻辑：
+
+```cpp
+// 仅当活跃Track数为1且标记为bit-perfect时启用直传
+if (mActiveTracks.size() == 1 && mActiveTracks[0]->isBitPerfect()) {
+    // 设置TEE_BUFFER直接写入SinkBuffer
+    mAudioMixer->setParameter(trackId, AudioMixer::TRACK,
+                              AudioMixer::TEE_BUFFER, (void*)mSinkBuffer);
+    mIsBitPerfect = true;
+} else {
+    // 多Track回退，清除TEE_BUFFER
+    mIsBitPerfect = false;
+}
+```
+
+[`threadLoop_mix()`](frameworks/av/services/audioflinger/Threads.cpp:11070) 中通过`mHasDataCopiedToSinkBuffer`标记是否跳过后续写入：
+- `mIsBitPerfect=true`：数据已通过TEE_BUFFER直接写入SinkBuffer，无需额外拷贝
+- `mIsBitPerfect=false`：走正常Mixer混音流程
+
+### 5.17.4 输出线程类型对比
+
+| 特性 | MixerThread | DirectOutputThread | OffloadThread | SpatializerThread | BitPerfectThread |
+|------|------------|-------------------|---------------|-------------------|-----------------|
+| 触发Flag | DEFAULT | DIRECT | COMPRESS_OFFLOAD | SPATIALIZER | BIT_PERFECT |
+| 输入Track | 多Track混合 | 单Track | 单Track压缩 | 多Track+空间化 | 单/多Track |
+| 格式转换 | 是(重采样+混音) | 有限转换 | 硬件解码 | 是(空间化+下混) | 否(直传) |
+| 音效链 | 完整EffectChain | 简化 | 无 | 空间音效链 | 最小化 |
+| 典型场景 | 通用播放 | 低延迟直出 | 硬件解码播放 | 空间音频/头部追踪 | 车载HiFi/位完美 |
+| AOSP14状态 | 稳定 | 稳定 | 稳定 | 稳定 | **新增** |
+
+```mermaid
+flowchart TB
+    subgraph 输出线程类型
+        MT[MixerThread<br/>多Track混合]
+        DOT[DirectOutputThread<br/>单Track直出]
+        OT[OffloadThread<br/>硬件解码]
+        ST[SpatializerThread<br/>空间音频处理]
+        BPT[BitPerfectThread<br/>位完美直传]
+    end
+
+    MT -->|AUDIO_OUTPUT_FLAG_SPATIALIZER| ST
+    MT -->|AUDIO_OUTPUT_FLAG_BIT_PERFECT| BPT
+    DOT -->|单Track无混合| DOT
+    OT -->|COMPRESS_OFFLOAD| OT
+
+    BPT --> BPT1{活跃Track数=1<br/>且isBitPerfect?}
+    BPT1 -->|是| BPT2[TEE_BUFFER直传SinkBuffer]
+    BPT1 -->|否| BPT3[回退Mixer混音]
+```
 
 ---
 

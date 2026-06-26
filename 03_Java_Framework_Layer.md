@@ -110,6 +110,9 @@ graph TB
     NewReq["新焦点请求"] -->|入栈| Top
     Top -->|LOSS通知| M
     M -->|LOSS通知| B
+
+    end
+
 ```
 
 ### 核心调用链
@@ -357,6 +360,7 @@ flowchart TB
         PAM --> MFC["MediaFocusControl<br>焦点请求关联"]
 
 
+    end
     subgraph "MediaSession状态"
         ACTIVE["ACTIVE<br>正在播放<br>可响应MediaButton"]
         PAUSED["PAUSED<br>暂停<br>仍可接收MediaButton"]
@@ -367,6 +371,9 @@ flowchart TB
     PAUSED -->|"play（）"| ACTIVE
     ACTIVE -->|"stop（）"| INACTIVE
     PAUSED -->|"stop（）"| INACTIVE
+
+    end
+
 ```
 
 **关键交互**: PlaybackState中的`PlaybackState.STATE_PLAYING`映射到`PLAYER_STATE_STARTED`，用于焦点Ducking/FadeOut判断。
@@ -385,10 +392,14 @@ flowchart TB
         CALLBACK --> AR["App启动AudioRecord<br>开始录音"]
 
 
+    end
     subgraph "与AudioRecord的互斥"
         AR2["AudioRecord（STREAM_MUSIC）"] --> APM["AudioPolicyManager"]
         HAL_ST2["SoundTrigger（HW）"] --> APM
         APM -->|"concurrency<br>根据HAL实现"| SHARED["共享录音源<br>或互斥"]
+
+
+    end
 
 ```
 
@@ -406,10 +417,14 @@ flowchart TB
         CAPTURE_HOTWORD["CAPTURE_AUDIO_HOTWORD<br>热词检测（System/PrivApp）"]
 
 
+    end
     subgraph "权限检查点"
         AR_PERM["AudioRecord构造→checkPermission（RECORD_AUDIO）"]
         AM_PERM["AudioManager API→checkPermission（MODIFY_AUDIO_SETTINGS）"]
         BT_PERM["AudioDeviceBroker→checkPermission（BLUETOOTH_CONNECT）"]
+
+
+    end
 
 ```
 
@@ -432,6 +447,7 @@ flowchart TB
         BLUETOOTH_ON["Settings.Global.BLUETOOTH_ON<br>蓝牙音频状态"]
 
 
+    end
     subgraph "读写时机"
         READ["AudioService初始化→<br>readPersistedSettings（）"]
         WRITE["音量变更→persistVolume（）<br>模式变更→persistRingerMode（）"]
@@ -443,6 +459,9 @@ flowchart TB
     BLUETOOTH_ON --> READ
     WRITE --> VOLUME
     WRITE --> MODE
+
+    end
+
 ```
 
 **关键点**:
@@ -516,6 +535,7 @@ flowchart TB
         UPDATE_MSG --> RESOLVE["onUpdateAudioMode（）"]
 
 
+    end
     subgraph "模式裁决（resolve）"
         RESOLVE --> GET_OWNER["getAudioModeOwnerHandler（）"]
         GET_OWNER --> PRIORITY{"特权App存在?"}
@@ -529,11 +549,15 @@ flowchart TB
         SET_MODE --> EFFECTS["模式变更副作用"]
 
 
+    end
     subgraph "模式变更副作用"
         EFFECTS --> VOL_ALIAS["updateStreamVolumeAlias（）<br>音量别名重映射"]
         EFFECTS --> ABS_VOL["updateAbsVolumeMultiModeDevices（）<br>蓝牙绝对音量更新"]
         EFFECTS --> LE_VOL["setLeAudioVolumeOnModeUpdate（）<br>LE Audio音量更新"]
         EFFECTS --> MODE_OWNER["postSetModeOwner（）<br>通知DeviceBroker"]
+
+
+    end
 
 ```
 
@@ -566,6 +590,9 @@ flowchart TB
         SCO_CHECK -->|"是（BT耳机）"| START_SCO["startBluetoothSco（）<br>建立SCO音频链路"]
         SCO_CHECK -->|"否"| DONE["完成"]
         START_SCO --> DONE
+
+
+    end
 
 ```
 
@@ -689,10 +716,10 @@ flowchart TB
 
 ```mermaid
 sequenceDiagram
-    participant App as AudioRecord(App)
+    participant App as AudioRecord（App）
     participant RAM as RecordingActivityMonitor
     participant AS as AudioSystem
-    participant SysUI as SystemUI(隐私指示器)
+    participant SysUI as SystemUI（隐私指示器）
 
     App->>RAM: trackRecorder(binder) → 分配riid
     App->>AS: start()
@@ -716,6 +743,5 @@ sequenceDiagram
 | 配置分发 | AudioPlaybackConfiguration | AudioRecordingConfiguration |
 
 > **关键区别**: RecordingActivityMonitor仅负责**追踪+通知**，不执行任何录音控制。录音并发仲裁由Native层AudioPolicyService::updateActiveClients_l()执行，通过`setAppState_l()`将非授权App的录音路由到空设备(静默)。这与播放侧框架直接执行duck/fadeout/mute形成对比。
-# 第三篇：Java Framework Layer
 
 > [← 上一篇：Application Layer](02_Application_Layer.md) | [返回导航](README.md) | [下一篇：Native Framework →](04_Native_Framework_Layer.md)
