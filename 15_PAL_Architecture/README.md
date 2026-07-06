@@ -22,14 +22,14 @@
 
 ### 第四部分：核心管理模块
 
-- [15.6 ResourceManager架构地位](15_15.6_架构地位.md) — 单例模式、流注册/注销、设备路由、FE/BE分配、SSR处理、并发策略
-- [15.7 PayloadBuilder核心职责](15_15.7_核心职责.md) — GKV/CKV/TKV构建、模块配置Payload、DSP模块API、kvh2xml映射
+- [15.6 ResourceManager架构地位](15_15.6_ResourceManager-PAL核心管理模块.md) — 单例模式、流注册/注销、设备路由、FE/BE分配、SSR处理、并发策略
+- [15.7 PayloadBuilder核心职责](15_15.7_PayloadBuilder-载荷构建器.md) — GKV/CKV/TKV构建、模块配置Payload、DSP模块API、kvh2xml映射
 - [15.8 HIDL接口定义](15_15.8_HIDL_接口定义.md) — IPAL.hal接口、服务端/客户端实现、IPC机制、SA8295安全模型、HIDL→AIDL演进
 - [15.9 配置文件列表](15_15.9_配置文件列表.md) — 7个SoC平台配置、XML结构详解、device_profile/EC ref/VSID、平台差异
 
 ### 第五部分：HAL适配与插件体系
 
-- [15.10 HAL-PAL适配层架构](15_15.10_架构.md) — AudioDevice/StreamOut/StreamIn/AudioVoice、参数映射、audio_extn扩展、SA8295车机特化
+- [15.10 HAL-PAL适配层架构](15_15.10_HAL-PAL适配层架构.md) — AudioDevice/StreamOut/StreamIn/AudioVoice、参数映射、audio_extn扩展、SA8295车机特化
 - [15.11 编解码器插件 (plugins/codecs/)](15_15.11_编解码器插件_pluginscodecs.md) — BT Offload编解码器插件体系
 - [15.12 QC audio-alsa：ALSA用户空间封装层](15_15.12_QC_audio-alsa_ALSA层实现.md) — tinyalsa封装与ALSA控制
 - [15.13 QC GEF：通用音效框架](15_15.13_QC_GEF_通用音效框架.md) — Generic Effect Framework
