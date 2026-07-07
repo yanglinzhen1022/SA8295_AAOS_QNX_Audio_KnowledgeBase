@@ -16,7 +16,7 @@
 - [16.8 ALSA UCM配置](16_16.8_ALSA_UCM配置.md)
 - [16.9 auto-casa-xml配置](16_16.9_auto-casa-xml配置.md)
 - [16.10 AGM Audio Graph Manager深度解析](16_16.10_AGMAudio_Graph_Manager深度解.md)
-- [16.11 SessionGsl与GSL接口](16_16.11_SessionGsl与GSL接口.md)
+- [16.11 GSL接口与PAL Session的图管理](16_16.11_SessionGsl与GSL接口.md)（注：文件名保留历史标识 SessionGsl，SessionGsl 类已废弃，实走 SessionAlsaPcm/SessionAgm）
 - [16.12 Android+QNX双域架构总结](16_16.12_Android+QNX双域架构总结.md)
 - [16.13 Primary HAL AudioReach版深度解析](16_16.13_Primary_HALAudioReach版深度解.md)
 - [16.14 GSL Graph Service Layer内部架构](16_16.14_GSLGraph_Service_Layer内部架.md)
