@@ -25,7 +25,7 @@
 - [15.6 ResourceManager架构地位](15_15.6_ResourceManager-PAL核心管理模块.md) — 单例模式、流注册/注销、设备路由、FE/BE分配、SSR处理、并发策略
 - [15.7 PayloadBuilder核心职责](15_15.7_PayloadBuilder-载荷构建器.md) — GKV/CKV/TKV构建、模块配置Payload、DSP模块API、kvh2xml映射
 - [15.8 HIDL接口定义](15_15.8_HIDL_接口定义.md) — IPAL.hal接口、服务端/客户端实现、IPC机制、SA8295安全模型、HIDL→AIDL演进
-- [15.9 配置文件列表](15_15.9_配置文件列表.md) — 7个SoC平台配置、XML结构详解、device_profile/EC ref/VSID、平台差异
+- [15.9 配置文件列表](15_15.9_配置文件列表.md) — 6个SoC平台配置(bengal/kona/lahaina/monaco/msmnile/taro，monaco=SA8295)、XML结构详解、device_profile/EC ref/VSID、平台差异
 
 ### 第五部分：HAL适配与插件体系
 
