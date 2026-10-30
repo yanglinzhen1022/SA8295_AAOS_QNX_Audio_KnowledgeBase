@@ -2,7 +2,7 @@
 
 > 对照源码阅读时，从核心类/接口名快速定位讲解所在章。按层分组，`章节` 列指主要讲解章。[← 返回总目录](README.md) ｜ 目录级速查见 [01.5 关键源码目录速查](01_Architecture_Overview/01_1.5_关键源码目录速查.md)
 
-> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方 4.4、5.1、5.9、5.10、6.1、6.2、8.1、15.10、15.99 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
+> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方 4.4、5.1、5.9、5.10、6.1、6.2、8.1、9.1、9.2、9.5、9.11、10.1、10.6、15.10、15.99 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
 
 ---
 
@@ -71,18 +71,23 @@
 | IModule / IStreamOut / IStreamIn (AIDL) | 08（新版本候选资料，非本地主线） |
 | StreamDescriptor / AudioGain / AudioPort / AudioPatch | 08（需区分接口版本） |
 | ISoundDose / ITelephony (AIDL) | 08（新版本候选资料，非本地主线） |
-| IAudioControl (AIDL) / IFocusListener | 10 |
-| IAudioGainCallback / IModuleChangeCallback | 10 |
-| AudioControlWrapperAidl / HalAudioFocus | 10 |
+| IAudioControl (AIDL v1) / IFocusListener | [10.1 本地控制接口](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md) |
+| IAudioGainCallback / IModuleChangeCallback | 10（新版候选，非本地 AudioControl v1） |
+| AudioControlWrapperAidl | [10.6 类型、能力与死亡处理](10_AudioControl_HAL/10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) |
+| HalAudioFocus | 交互边界见 [10.1](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md)；10.7 详细原文待核对 |
 
 ## AAOS 车载（09）/ 焦点·音量·设备深入（12–13）
 
 | 类 / 接口 | 章节 |
 |-----------|------|
-| CarAudioService / CarAudioZone / CarAudioZoneConfig | 09 |
-| CarAudioFocus / CarZonesAudioFocus | 09 / 12 |
-| CarVolumeGroup / CarVolume | 09 / 13 |
-| CarAudioDynamicRouting / CarAudioGainMonitor / CarDucking | 09 |
+| CarAudioService | [9.2 初始化、用户与控制协作](09_AAOS_Car_Audio/09_9.2_CarAudioService-车载音频核心服务.md) |
+| CarAudioZone / CarAudioContext / CarAudioZonesValidator | 对象和验证边界见 [9.1](09_AAOS_Car_Audio/09_9.1_AAOS音频系统总览.md)；专篇仍待核对 |
+| CarAudioZoneConfig / CarAudioGainMonitor | 09（旧索引中的新版候选，非已确认本地实现） |
+| CarAudioFocus / CarZonesAudioFocus | 09 / 12（详细焦点原文待核对） |
+| CarVolumeGroup / CarAudioDeviceInfo / CarAudioSettings | [9.5 索引、设备 gain 与持久化](09_AAOS_Car_Audio/09_9.5_CarVolumeGroup-车载音量组.md) |
+| CarVolume | 09 / 13（待核对） |
+| CarAudioDynamicRouting | [9.11 按地址构建 AudioMix](09_AAOS_Car_Audio/09_9.11_CarAudioDynamicRouting-动态路由构建.md) |
+| CarDucking / CarVolumeGroupMuting | 控制边界见 [10.1](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md)；详细原文待核对 |
 | FocusRequester / FadeOutManager | 12 |
 | VolumeController / MelProcessor / MelAggregator | 13 |
 

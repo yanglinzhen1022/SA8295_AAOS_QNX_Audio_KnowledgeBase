@@ -4,7 +4,7 @@
 
 **当前整理主线：本地 Android 12L / API 32 + SA8295 + QNX，产品使用 AudioReach。** 本地主线不是 Android 14；新版本机制需与对应版本源码对照，不与主线混写。
 
-> **阅读状态：** 本库正在逐篇源码核对与重构。目前优先阅读下列 Native PCM / Policy 与 HAL → PAL 主线文章；其余原章节保留供查阅，尚未完成本轮核对，可能含旧版本混写、错误映射或未验证流程。目录存在不代表内容已经核验，静态源码分析也不代表实机行为已经验证。
+> **阅读状态：** 本库正在逐篇源码核对与重构。目前优先阅读下列 Native PCM / Policy、AAOS 路由控制与 HAL → PAL 主线文章；其余原章节保留供查阅，尚未完成本轮核对，可能含旧版本混写、错误映射或未验证流程。目录存在不代表内容已经核验，静态源码分析也不代表实机行为已经验证。
 
 [术语表](GLOSSARY.md) ｜ [类名反向索引](CLASS_INDEX.md) ｜ [主题阅读入口](#主题去重导航矩阵single-source-of-truth)
 
@@ -17,6 +17,14 @@
 | 3 | [5.9 普通 PCM 播放](05_AudioFlinger/05_5.9_音乐播放全栈调用链.md) | 创建、FAST 协商、start、write 与实际消费怎样衔接？ |
 | 4 | [5.10 普通 PCM 录音](05_AudioFlinger/05_5.10_录音全栈调用链.md) | 输入重选、两阶段启动、分发和静音为何不能照抄播放？ |
 | 5 | [6.1 APS](06_Audio_Policy_Engine/06_6.1_AudioPolicyService-控制面入口.md) → [6.2 APM](06_Audio_Policy_Engine/06_6.2_AudioPolicyManager-策略核心实现.md) | 权限、动态策略、设备/I/O 选择和活动状态分别由谁管理？ |
+
+### 加入车载控制：AAOS → AudioControl
+
+| 顺序 | 文章 | 要回答的问题 |
+|---|---|---|
+| 1 | [9.1 AAOS 对象模型](09_AAOS_Car_Audio/09_9.1_AAOS音频系统总览.md) → [9.11 动态 AudioMix](09_AAOS_Car_Audio/09_9.11_CarAudioDynamicRouting-动态路由构建.md) | Zone、Context、usage 与 BUS 怎样关联，规则由谁注册？ |
+| 2 | [9.2 CarAudioService](09_AAOS_Car_Audio/09_9.2_CarAudioService-车载音频核心服务.md) → [9.5 音量组](09_AAOS_Car_Audio/09_9.5_CarVolumeGroup-车载音量组.md) | 用户/UID affinity、索引、设备 gain 与 mute 分别怎样变化？ |
+| 3 | [10.1 AudioControl v1](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md) → [10.6 AIDL wrapper](10_AudioControl_HAL/10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) | 焦点、duck/mute 和死亡恢复的责任边界在哪里？ |
 
 ### 继续向下：HAL → PAL
 
@@ -100,8 +108,9 @@
 | HAL 边界与 FMQ | [8.1](08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md) | AudioFlinger、libaudiohal、厂商 HAL |
 | HAL-PAL 适配与普通 PCM 生命周期 | [15.10](15_PAL_Architecture/15_15.10_HAL-PAL适配层架构.md) | 08、PAL 内部 |
 | Stream / Session / Device 映射 | [15.99](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) | HAL flags、设备与 PAL 工厂 |
-| 焦点与 duck/mute | [12](12_Audio_Focus_Deep_Dive/) | 03、09、10；原文待核对 |
-| 音量与设备路由 | [13](13_Volume_Device_Deep_Dive/) / [06](06_Audio_Policy_Engine/) | 05、08、09；原文待核对 |
+| AAOS 区域与动态路由 | [9.1](09_AAOS_Car_Audio/09_9.1_AAOS音频系统总览.md) / [9.11](09_AAOS_Car_Audio/09_9.11_CarAudioDynamicRouting-动态路由构建.md) | 9.2 服务协调、Native Policy、BUS 地址 |
+| 车载控制与 duck/mute | [10.1](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md) / [10.6](10_AudioControl_HAL/10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) | 09；[12 焦点专题](12_Audio_Focus_Deep_Dive/) 原文仍待核对 |
+| 车载音量组 | [9.5](09_AAOS_Car_Audio/09_9.5_CarVolumeGroup-车载音量组.md) | 9.2、AudioPort gain、AudioControl muting；[13 跨层专题](13_Volume_Device_Deep_Dive/) 原文仍待核对 |
 | 效果处理 | [07](07_Effects_Framework/) | 02、05、HAL；原文待核对 |
 | AGM/GSL 与 QNX 边界 | [16](16_Vendor_QNX_Architecture/) | PAL、跨 VM 控制与数据路径；原文待核对 |
 | 新版本机制 | 现存专题作为候选材料，后续独立整理 | 需有对应版本来源后再与本地主线比较 |

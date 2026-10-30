@@ -4,7 +4,20 @@
 
 ---
 
-## 目录
+## 本地主线阅读顺序
+
+本章按 Android 12L/API 32 + SA8295 AudioReach 整理。已重写以下四篇，建议按职责依赖阅读：
+
+1. [9.1 对象与系统关系](09_9.1_AAOS音频系统总览.md)：区分 zone、occupant、usage、Context、BUS 和音量组。
+2. [9.11 动态路由构建](09_9.11_CarAudioDynamicRouting-动态路由构建.md)：Context 展开 usage、按地址构建 AudioMix，再注册策略。
+3. [9.2 CarAudioService](09_9.2_CarAudioService-车载音频核心服务.md)：初始化、用户/UID affinity、音量与控制协作。
+4. [9.5 CarVolumeGroup](09_9.5_CarVolumeGroup-车载音量组.md)：索引、millibel、设备 gain、mute 与持久化。
+
+之后读 [10.1 AudioControl](../10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md) 和 [10.6 AIDL wrapper](../10_AudioControl_HAL/10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md)，向下对齐 [6.2 APM](../06_Audio_Policy_Engine/06_6.2_AudioPolicyManager-策略核心实现.md)。
+
+> 以下完整目录保留旧入口；除上述四篇外尚未完成本轮核对。镜像、CarAudioZoneConfig、CarAudioGainMonitor 等旧文不能直接作为本地实现依据。声明/配置、策略注册与真实设备效果也应分开看。
+
+## 完整目录（含待核对旧文）
 
 - [9.1 AAOS音频系统总览](09_9.1_AAOS音频系统总览.md)
 - [9.2 CarAudioService — 车载音频核心服务](09_9.2_CarAudioService-车载音频核心服务.md)
