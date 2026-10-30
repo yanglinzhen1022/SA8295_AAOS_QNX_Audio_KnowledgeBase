@@ -2,7 +2,7 @@
 
 > 对照源码阅读时，从核心类/接口名快速定位讲解所在章。按层分组，`章节` 列指主要讲解章。[← 返回总目录](README.md) ｜ 目录级速查见 [01.5 关键源码目录速查](01_Architecture_Overview/01_1.5_关键源码目录速查.md)
 
-> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方本批新增的 8.1、15.10、15.99 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
+> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方 4.4、5.1、5.9、5.10、6.1、6.2、8.1、15.10、15.99 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
 
 ---
 
@@ -22,20 +22,21 @@
 
 | 类 / 接口 | 章节 |
 |-----------|------|
-| AudioTrack.cpp / AudioRecord.cpp | 04 |
-| AudioSystem | 04 |
-| AudioTrackClientProxy / AudioRecordClientProxy | 04 |
-| IAudioFlingerService (AIDL) | 04 / 05 |
+| AudioTrack.cpp / AudioRecord.cpp | [5.9 播放](05_AudioFlinger/05_5.9_音乐播放全栈调用链.md) / [5.10 录音](05_AudioFlinger/05_5.10_录音全栈调用链.md) |
+| AudioSystem | 04（完整客户端接口仍待整理）；策略协作见 [6.1](06_Audio_Policy_Engine/06_6.1_AudioPolicyService-控制面入口.md) |
+| AudioTrackClientProxy / AudioRecordClientProxy / ServerProxy / audio_track_cblk_t | [4.4 共享内存协议](04_Native_Framework_Layer/04_4.4_共享内存机制深度解析.md) |
+| IAudioFlingerService (AIDL) / AudioFlingerServerAdapter | [5.1 Framework 服务边界](05_AudioFlinger/05_5.1_AudioFlinger-音频数据面引擎.md) |
 | ChannelMix / resampler / fifo (audio_utils) | 04 / 13(MEL) |
 
 ## AudioFlinger（05）
 
 | 类 / 接口 | 章节 |
 |-----------|------|
-| AudioFlinger / ThreadBase / MixerThread / RecordThread | 05 |
+| AudioFlinger / ThreadBase / MixerThread / RecordThread | [5.1 对象与线程](05_AudioFlinger/05_5.1_AudioFlinger-音频数据面引擎.md)；具体周期见 5.9 / 5.10 |
 | FastMixer | 05 |
 | AudioMixer / AudioResampler | 05 |
-| Track / RecordTrack | 05 |
+| Track / TrackHandle | [5.9 播放端点生命周期](05_AudioFlinger/05_5.9_音乐播放全栈调用链.md) |
+| RecordTrack / RecordHandle | [5.10 录音端点生命周期](05_AudioFlinger/05_5.10_录音全栈调用链.md) |
 | PatchPanel / PatchCommandThread | 05 |
 | MelReporter / SoundDoseManager | 05 / 13 |
 | SpatializerThread / BitPerfectThread | 05 |
@@ -45,7 +46,8 @@
 
 | 类 / 接口 | 章节 |
 |-----------|------|
-| AudioPolicyService / AudioPolicyManager | 06 |
+| AudioPolicyService / AudioPolicyClient / IAudioPolicyService | [6.1 接口、权限与回调](06_Audio_Policy_Engine/06_6.1_AudioPolicyService-控制面入口.md) |
+| AudioPolicyManager / TrackClientDescriptor / RecordClientDescriptor | [6.2 选择与资源生命周期](06_Audio_Policy_Engine/06_6.2_AudioPolicyManager-策略核心实现.md) |
 | EngineBase / EngineInterface | 06 |
 | ProductStrategy / VolumeGroup / VolumeCurve | 06 / 13 |
 | EngineConfigurable (PFW) / EngineConfig | 06 |

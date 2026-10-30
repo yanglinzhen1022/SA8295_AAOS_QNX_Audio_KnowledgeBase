@@ -4,7 +4,15 @@
 
 ---
 
-## 目录
+## 推荐阅读
+
+先读已按本地 Android 12L/API 32 源码重写的 [6.1 AudioPolicyService](06_6.1_AudioPolicyService-控制面入口.md)，理解接口、权限与 client callback；再读 [6.2 AudioPolicyManager](06_6.2_AudioPolicyManager-策略核心实现.md)，区分属性/设备选择、I/O 选择与 start/stop/release。
+
+结合 [5.9 播放](../05_AudioFlinger/05_5.9_音乐播放全栈调用链.md) 与 [5.10 录音](../05_AudioFlinger/05_5.10_录音全栈调用链.md) 对齐控制面和数据面。Policy 不传 PCM，动态 policy mix 也不能被一张固定设备优先级表代替。
+
+下列其余文章仍保留供查阅，尚未完成本轮逐篇核对。各配置/扩展是否在本产品启用，需要另看对应条件与运行状态。
+
+## 文章目录
 
 - [6.1 AudioPolicyService — 控制面入口](06_6.1_AudioPolicyService-控制面入口.md)
 - [6.2 AudioPolicyManager — 策略核心实现](06_6.2_AudioPolicyManager-策略核心实现.md)

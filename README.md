@@ -4,11 +4,21 @@
 
 **当前整理主线：本地 Android 12L / API 32 + SA8295 + QNX，产品使用 AudioReach。** 本地主线不是 Android 14；新版本机制需与对应版本源码对照，不与主线混写。
 
-> **阅读状态：** 本库正在逐篇源码核对与重构。目前优先阅读下列三篇 HAL → PAL 样章；其余原章节保留供查阅，尚未完成本轮核对，可能含旧版本混写、错误映射或未验证流程。目录存在不代表内容已经核验，静态源码分析也不代表实机行为已经验证。
+> **阅读状态：** 本库正在逐篇源码核对与重构。目前优先阅读下列 Native PCM / Policy 与 HAL → PAL 主线文章；其余原章节保留供查阅，尚未完成本轮核对，可能含旧版本混写、错误映射或未验证流程。目录存在不代表内容已经核验，静态源码分析也不代表实机行为已经验证。
 
 [术语表](GLOSSARY.md) ｜ [类名反向索引](CLASS_INDEX.md) ｜ [主题阅读入口](#主题去重导航矩阵single-source-of-truth)
 
-## 从这里开始：HAL → PAL 源码样章
+## 从这里开始：Native PCM → Policy → HAL / PAL
+
+| 顺序 | 文章 | 要回答的问题 |
+|---|---|---|
+| 1 | [5.1 AudioFlinger 职责与对象](05_AudioFlinger/05_5.1_AudioFlinger-音频数据面引擎.md) | Track、线程、I/O 与 HAL 对象为什么不是一一对应？ |
+| 2 | [4.4 共享内存协议](04_Native_Framework_Layer/04_4.4_共享内存机制深度解析.md) | 谁推进 front/rear？为什么共享不等于零拷贝？ |
+| 3 | [5.9 普通 PCM 播放](05_AudioFlinger/05_5.9_音乐播放全栈调用链.md) | 创建、FAST 协商、start、write 与实际消费怎样衔接？ |
+| 4 | [5.10 普通 PCM 录音](05_AudioFlinger/05_5.10_录音全栈调用链.md) | 输入重选、两阶段启动、分发和静音为何不能照抄播放？ |
+| 5 | [6.1 APS](06_Audio_Policy_Engine/06_6.1_AudioPolicyService-控制面入口.md) → [6.2 APM](06_Audio_Policy_Engine/06_6.2_AudioPolicyManager-策略核心实现.md) | 权限、动态策略、设备/I/O 选择和活动状态分别由谁管理？ |
+
+### 继续向下：HAL → PAL
 
 | 顺序 | 文章 | 要回答的问题 |
 |---|---|---|
@@ -16,7 +26,7 @@
 | 2 | [15.10 HAL-PAL 适配层：从一次 PCM write 理解对象与生命周期](15_PAL_Architecture/15_15.10_HAL-PAL适配层架构.md) | 什么时候 open/start？standby 为什么会 close？正返回为何不证明已发声？ |
 | 随读随查 | [15.99 Stream、Session、Device：工厂映射与适用边界](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) | 三类对象如何分别选择？Non-Tunnel 和检测引擎有哪些边界？ |
 
-三篇配有源码片段、调用关系、时序或状态图。范围以各篇声明为准，不用一个普通 PCM 示例代替所有流类型。
+以上主线文章配有源码片段、调用关系、时序或状态图。范围以各篇声明为准，不用一个普通 PCM 示例代替所有流类型。
 
 ## 分层学习顺序
 
@@ -32,7 +42,7 @@
 
 **08 → 15 → 16**
 
-先读本批样章，区分 HIDL/C HAL/PAL 边界，再深入 PAL 内部、AGM/GSL 和 QNX。控制调用、共享缓冲区、PCM API 与跨 VM 消息需要分别追踪，不能用一条粗箭头替代。
+先读上列 HAL-PAL 文章，区分 HIDL/C HAL/PAL 边界，再深入 PAL 内部、AGM/GSL 和 QNX。控制调用、共享缓冲区、PCM API 与跨 VM 消息需要分别追踪，不能用一条粗箭头替代。
 
 ### 第三阶段：理解 AAOS 与跨层主题
 
@@ -46,7 +56,7 @@
 
 调试章节放在原理之后学习。先区分 Java AudioService、AudioFlinger、AudioPolicy 和 HAL/PAL 的观察范围，再判断问题属于哪层；不把某条日志或某个成功返回码当作完整链路成功。
 
-以上路线中，除明确列出的样章外，原文仍在整理。新版本主题可作为查阅线索，不作为本地 Android 12L 的实现依据。
+以上路线中，除明确列出的已重写文章外，原文仍在整理。新版本主题可作为查阅线索，不作为本地 Android 12L 的实现依据。
 
 ## 章节目录
 
@@ -84,6 +94,9 @@
 
 | 主题 | 优先入口 | 关联层 |
 |---|---|---|
+| 客户端共享内存 | [4.4](04_Native_Framework_Layer/04_4.4_共享内存机制深度解析.md) | AudioTrack、AudioRecord、Proxy |
+| AF 视角的普通播放/录音 | [5.9](05_AudioFlinger/05_5.9_音乐播放全栈调用链.md) / [5.10](05_AudioFlinger/05_5.10_录音全栈调用链.md) | Track、I/O、线程与 HAL；不代替跨域端到端专题 |
+| 策略入口与选择 | [6.1](06_Audio_Policy_Engine/06_6.1_AudioPolicyService-控制面入口.md) / [6.2](06_Audio_Policy_Engine/06_6.2_AudioPolicyManager-策略核心实现.md) | APS、APM、Engine、动态 mix |
 | HAL 边界与 FMQ | [8.1](08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md) | AudioFlinger、libaudiohal、厂商 HAL |
 | HAL-PAL 适配与普通 PCM 生命周期 | [15.10](15_PAL_Architecture/15_15.10_HAL-PAL适配层架构.md) | 08、PAL 内部 |
 | Stream / Session / Device 映射 | [15.99](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) | HAL flags、设备与 PAL 工厂 |
