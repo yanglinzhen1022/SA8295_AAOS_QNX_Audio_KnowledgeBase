@@ -46,7 +46,7 @@
 - [x] 18.3 正文完成后将 16.14 改为有定位说明的迁移入口，更新导航并保留相邻链接；未发现指向本批正文的带 anchor 入链。
 - [x] 更新 16/18/root/CLASS_INDEX 的职责和已重写范围。
 - [x] 运行新检查器 --navigation，以及 PAL/GSL VM/校准/AGM/focus/AAOS/Native/HAL-PAL 全部回归；均为零失败。
-- [ ] 作者自审，记录证据/局限，运行 /tmp/qc-staged-doc-gate.py 与 diff 检查后指定文档提交；继续 QNX/内核与剩余层，不宣布整库完成。
+- [x] 作者自审，记录证据/局限，运行 /tmp/qc-staged-doc-gate.py 与 diff 检查后指定文档提交；继续 QNX/内核与剩余层，不宣布整库完成。
 
 ## Execution Record
 
@@ -59,4 +59,4 @@
 - 作者语义自审：init 已设 OPENED，空 GKV 可成功；GRAPH_CLOSED 不是普通 close 的必经赋值；error state updater 不再改写且返回旧态；stop 先改 STOPPED、后发 SG 命令；多个 GKV 的 start 非通用事务。故用源码路径图替代旧文严格状态机。
 - 数据自审：补入 STARTED 禁止重配、tag 查询恰好一个 MIID；区分 heap/SHMEM/EXTERN/PUSH_PULL、短传输、提交计数、回调临时描述符、non-shmem packet 生命周期，以及等待/清理错误未传播。全部为静态分析，不声称复现内存安全问题或掉音。
 - Task 2 全回归：新批 7 files/222 links/4 excerpts/6 diagrams/0 failures；PAL 6/179/6/5；VM 6/193/4/5；校准 6/182/9/4；AGM 9/220/10/7；focus 11/222/18/12 +169 cells；AAOS 10/207/16/15；Native 11/211/16/20；HAL-PAL 7 files/9 excerpts。所有检查零失败；已检查带 anchor 入链均为零。
-- 局限：未 Mermaid 渲染、产品构建、DSP/HAB 执行、故障注入、内存或硬件测试。最后整库独立 review 仍未启动；本批为作者自审。提交前暂存门禁检查 9 个 Markdown 文件通过，随后新批 navigation 检查再次零失败；提交号及提交后状态在下一批起点补记。
+- 局限：未 Mermaid 渲染、产品构建、DSP/HAB 执行、故障注入、内存或硬件测试。最后整库独立 review 仍未启动；本批为作者自审。提交前暂存门禁检查 9 个 Markdown 文件通过，随后新批 navigation 检查再次零失败；提交 4d6ba19（9 文件、406 insertions/824 deletions），提交后工作区干净；下一批进入 QNX 服务/GPR，整体目标未完成。

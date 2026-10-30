@@ -16,6 +16,6 @@
 
 6. [18.3 GSL 图生命周期与 DSP 命令](18_18.3_GSL图生命周期与DSP命令.md)：宿主 handle/GKV/共享 SG、状态与远端成功、GPR 命令组、数据模式、完成和关闭。
 
-18.1、18.2、18.3 及关联校准文章已按各自可见源码整理；gsl_fe 内部仍是预编译边界，未进行跨 VM 运行、DSP 或板级验证。RTC/动态模块、GPR datalink、QNX/内核与 16 章其他原文仍需继续核对；不创建空的后续文章。
+18.1、18.2、18.3 及关联校准文章已按各自可见源码整理；gsl_fe 内部仍是预编译边界，未进行跨 VM 运行、DSP 或板级验证。下游 [16.17 QNX 服务](../16_Vendor_QNX_Architecture/16_16.17_QNX_audio_service_vm_VM音频服务.md) 与 [16.19 GPR/GLink](../16_Vendor_QNX_Architecture/16_16.19_QNX_apr_lib_APR协议库.md) 已解释服务装配与报文传输边界；RTC/动态模块、更底层 SMEM/内核与 16 章其他原文仍需继续核对。
 
 原 [16.10 AGM 入口](../16_Vendor_QNX_Architecture/16_16.10_AGMAudio_Graph_Manager深度解.md) 与 [16.14 GSL 入口](../16_Vendor_QNX_Architecture/16_16.14_GSLGraph_Service_Layer内部架.md) 保留兼容链接，深入讲解统一放在本章；[16.11](../16_Vendor_QNX_Architecture/16_16.11_SessionGsl与GSL接口.md) 解释 PAL Session 声明/工厂与 GSL API 边界。
