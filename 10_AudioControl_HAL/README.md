@@ -8,6 +8,7 @@
 
 1. [10.1 AudioControl HAL 总览](10_10.1_AudioControl_HAL总览.md)：六个 v1 控制方法、双向焦点、地址级 duck/mute、fade/balance 以及默认示例边界。
 2. [10.6 AudioControlWrapperAidl](10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md)：固定能力表、类型转换、异常差异、Binder death 与上层重注册。
+3. [10.7 HalAudioFocus](10_10.7_HalAudioFocus-外部焦点请求管理.md)：zone/usage 两层请求表、GRANTED/DELAYED、abandon 与 reset 遍历边界。
 
 配合 [9.2 CarAudioService](../09_AAOS_Car_Audio/09_9.2_CarAudioService-车载音频核心服务.md) 与 [9.5 音量组](../09_AAOS_Car_Audio/09_9.5_CarVolumeGroup-车载音量组.md) 理解调用来源；AudioPort gain 与 AudioControl mute/duck 不是同一接口。
 
@@ -21,6 +22,6 @@
 - [10.4 Ducking 机制](10_10.4_Ducking机制.md) — 待核对。
 - [10.5 Muting 机制](10_10.5_Muting机制.md) — 待核对。
 - [10.6 AudioControlWrapperAidl](10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) — 已按本地 wrapper 重写。
-- [10.7 HalAudioFocus](10_10.7_HalAudioFocus-外部焦点请求管理.md) — 待核对。
+- [10.7 HalAudioFocus](10_10.7_HalAudioFocus-外部焦点请求管理.md) — 已按本地请求表与清理流程重写。
 - [10.8 AudioControlFactory 与 HIDL Wrapper](10_10.8_IAudioGainCallback-HAL增益回调链路.md) — 保留历史文件名，内容与版本仍待核对。
 - [10.9 IModuleChangeCallback](10_10.9_IModuleChangeCallback-运行时模块变更通知.md) — 新版本候选材料，不属于本地 v1 接口。

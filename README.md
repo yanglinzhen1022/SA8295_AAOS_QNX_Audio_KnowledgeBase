@@ -26,6 +26,8 @@
 | 2 | [9.2 CarAudioService](09_AAOS_Car_Audio/09_9.2_CarAudioService-车载音频核心服务.md) → [9.5 音量组](09_AAOS_Car_Audio/09_9.5_CarVolumeGroup-车载音量组.md) | 用户/UID affinity、索引、设备 gain 与 mute 分别怎样变化？ |
 | 3 | [10.1 AudioControl v1](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md) → [10.6 AIDL wrapper](10_AudioControl_HAL/10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) | 焦点、duck/mute 和死亡恢复的责任边界在哪里？ |
 
+进一步深入：[9.3 Zone](09_AAOS_Car_Audio/09_9.3_CarAudioZone-多Zone音频管理.md) → [9.18 配置解析](09_AAOS_Car_Audio/09_9.18_CarAudioZonesHelper-XML配置解析.md)；[9.10 焦点分区](09_AAOS_Car_Audio/09_9.10_CarZonesAudioFocus-多Zone焦点分发器.md) → [9.4 焦点状态](09_AAOS_Car_Audio/09_9.4_CarAudioFocus-车载焦点管理.md) → [12.6 交互矩阵](12_Audio_Focus_Deep_Dive/12_12.6_AAOS焦点交互矩阵.md) → [10.7 HAL 外部请求](10_AudioControl_HAL/10_10.7_HalAudioFocus-外部焦点请求管理.md)。
+
 ### 继续向下：HAL → PAL
 
 | 顺序 | 文章 | 要回答的问题 |
@@ -109,7 +111,7 @@
 | HAL-PAL 适配与普通 PCM 生命周期 | [15.10](15_PAL_Architecture/15_15.10_HAL-PAL适配层架构.md) | 08、PAL 内部 |
 | Stream / Session / Device 映射 | [15.99](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) | HAL flags、设备与 PAL 工厂 |
 | AAOS 区域与动态路由 | [9.1](09_AAOS_Car_Audio/09_9.1_AAOS音频系统总览.md) / [9.11](09_AAOS_Car_Audio/09_9.11_CarAudioDynamicRouting-动态路由构建.md) | 9.2 服务协调、Native Policy、BUS 地址 |
-| 车载控制与 duck/mute | [10.1](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md) / [10.6](10_AudioControl_HAL/10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) | 09；[12 焦点专题](12_Audio_Focus_Deep_Dive/) 原文仍待核对 |
+| 车载控制与 duck/mute | [10.1](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md) / [10.6](10_AudioControl_HAL/10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) | [9.4 单区域焦点](09_AAOS_Car_Audio/09_9.4_CarAudioFocus-车载焦点管理.md)、[12.6 矩阵](12_Audio_Focus_Deep_Dive/12_12.6_AAOS焦点交互矩阵.md)；12 其余原文仍待核对 |
 | 车载音量组 | [9.5](09_AAOS_Car_Audio/09_9.5_CarVolumeGroup-车载音量组.md) | 9.2、AudioPort gain、AudioControl muting；[13 跨层专题](13_Volume_Device_Deep_Dive/) 原文仍待核对 |
 | 效果处理 | [07](07_Effects_Framework/) | 02、05、HAL；原文待核对 |
 | AGM/GSL 与 QNX 边界 | [16](16_Vendor_QNX_Architecture/) | PAL、跨 VM 控制与数据路径；原文待核对 |

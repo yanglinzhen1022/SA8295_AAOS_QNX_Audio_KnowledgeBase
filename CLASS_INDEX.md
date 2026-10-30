@@ -2,7 +2,7 @@
 
 > 对照源码阅读时，从核心类/接口名快速定位讲解所在章。按层分组，`章节` 列指主要讲解章。[← 返回总目录](README.md) ｜ 目录级速查见 [01.5 关键源码目录速查](01_Architecture_Overview/01_1.5_关键源码目录速查.md)
 
-> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方 4.4、5.1、5.9、5.10、6.1、6.2、8.1、9.1、9.2、9.5、9.11、10.1、10.6、15.10、15.99 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
+> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方 4.4、5.1、5.9、5.10、6.1、6.2、8.1、9.1、9.2、9.3、9.4、9.5、9.10、9.11、9.18、10.1、10.6、10.7、12.6、15.10、15.99 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
 
 ---
 
@@ -74,16 +74,20 @@
 | IAudioControl (AIDL v1) / IFocusListener | [10.1 本地控制接口](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md) |
 | IAudioGainCallback / IModuleChangeCallback | 10（新版候选，非本地 AudioControl v1） |
 | AudioControlWrapperAidl | [10.6 类型、能力与死亡处理](10_AudioControl_HAL/10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) |
-| HalAudioFocus | 交互边界见 [10.1](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md)；10.7 详细原文待核对 |
+| HalAudioFocus | [10.7 zone/usage 请求表与清理边界](10_AudioControl_HAL/10_10.7_HalAudioFocus-外部焦点请求管理.md) |
 
 ## AAOS 车载（09）/ 焦点·音量·设备深入（12–13）
 
 | 类 / 接口 | 章节 |
 |-----------|------|
 | CarAudioService | [9.2 初始化、用户与控制协作](09_AAOS_Car_Audio/09_9.2_CarAudioService-车载音频核心服务.md) |
-| CarAudioZone / CarAudioContext / CarAudioZonesValidator | 对象和验证边界见 [9.1](09_AAOS_Car_Audio/09_9.1_AAOS音频系统总览.md)；专篇仍待核对 |
+| CarAudioZone | [9.3 区域对象、设备与活动 Context](09_AAOS_Car_Audio/09_9.3_CarAudioZone-多Zone音频管理.md) |
+| CarAudioZonesHelper / CarAudioZonesValidator | [9.18 V1/V2 配置解析与验证](09_AAOS_Car_Audio/09_9.18_CarAudioZonesHelper-XML配置解析.md) |
+| CarAudioContext | 对象映射见 [9.1](09_AAOS_Car_Audio/09_9.1_AAOS音频系统总览.md)；9.6 专篇仍待核对 |
 | CarAudioZoneConfig / CarAudioGainMonitor | 09（旧索引中的新版候选，非已确认本地实现） |
-| CarAudioFocus / CarZonesAudioFocus | 09 / 12（详细焦点原文待核对） |
+| CarAudioFocus / FocusEntry | [9.4 holders、losers、blockers 与 delayed](09_AAOS_Car_Audio/09_9.4_CarAudioFocus-车载焦点管理.md) |
+| CarZonesAudioFocus | [9.10 区域选择与分发](09_AAOS_Car_Audio/09_9.10_CarZonesAudioFocus-多Zone焦点分发器.md) |
+| FocusInteraction | [12.6 有方向的交互矩阵](12_Audio_Focus_Deep_Dive/12_12.6_AAOS焦点交互矩阵.md) |
 | CarVolumeGroup / CarAudioDeviceInfo / CarAudioSettings | [9.5 索引、设备 gain 与持久化](09_AAOS_Car_Audio/09_9.5_CarVolumeGroup-车载音量组.md) |
 | CarVolume | 09 / 13（待核对） |
 | CarAudioDynamicRouting | [9.11 按地址构建 AudioMix](09_AAOS_Car_Audio/09_9.11_CarAudioDynamicRouting-动态路由构建.md) |
