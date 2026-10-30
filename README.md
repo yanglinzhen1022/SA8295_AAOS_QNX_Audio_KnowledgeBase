@@ -38,6 +38,7 @@
 | 4 | [18.1 AGM 会话与音频图](18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md) | metadata/AIF 为什么先于 open？图、设备和会话怎样启动与清理？ |
 | 5 | [16.6 AudioReach 校准](16_Vendor_QNX_Architecture/16_16.6_ACDB校准体系.md) → [16.7 双域数据库](16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md) | 图查询、初始库、VM 握手与追加数据库有什么不同？ |
 | 6 | [18.2 GSL 跨 VM 控制与缓冲区](18_AGM_GSL_Architecture/18_18.2_GSL跨VM控制与缓冲区.md) → [16.12 双域全景](16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md) | 命令和完成为何走不同通道？HOST/GUEST、export ID 与 offset 怎样配合？ |
+| 7 | [18.3 GSL 图生命周期与 DSP 命令](18_AGM_GSL_Architecture/18_18.3_GSL图生命周期与DSP命令.md) | 共享 SG 如何启停？本地状态、GPR 应答、数据完成为什么不能混同？ |
 | 随读随查 | [15.99 Stream、Session、Device：工厂映射与适用边界](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) | 三类对象如何分别选择？Non-Tunnel 和检测引擎有哪些边界？ |
 
 PAL 资源与配置专题：[15.6 ResourceManager](15_PAL_Architecture/15_15.6_ResourceManager-PAL核心管理模块.md) → [15.7 PayloadBuilder](15_PAL_Architecture/15_15.7_PayloadBuilder-载荷构建器.md) → [15.9 配置地图](15_PAL_Architecture/15_15.9_配置文件列表.md)，解释 FE/设备配置、selector/KV、模块参数和安装选择之间的关系。
@@ -95,7 +96,7 @@ PAL 资源与配置专题：[15.6 ResourceManager](15_PAL_Architecture/15_15.6_R
 | [15 PAL 架构](15_PAL_Architecture/) | 平台抽象 | HAL-PAL、Stream/Session/Device、资源管理 |
 | [16 Vendor + QNX](16_Vendor_QNX_Architecture/) | 平台与跨域实现 | 16.6/16.7 校准与双域数据库、16.12 平台全景已整理；其他原文待核对 |
 | [17 调试与 OEM 指南](17_Debug_and_OEM_Guide/) | 问题定位 | 用各层状态、日志和工具验证假设 |
-| [18 AGM / GSL](18_AGM_GSL_Architecture/) | 图管理 | 18.1 AGM 生命周期、18.2 GSL VM 控制与缓冲；前端实现及本地 GSL 深层继续研究 |
+| [18 AGM / GSL](18_AGM_GSL_Architecture/) | 图管理 | 18.1 AGM、18.2 GSL VM、18.3 宿主图/GPR/数据路径；前端、RTC/动态模块及底层传输仍有边界 |
 
 ## 本地主线的几个必要边界
 
@@ -125,6 +126,7 @@ PAL 资源与配置专题：[15.6 ResourceManager](15_PAL_Architecture/15_15.6_R
 | AGM 会话与图 | [18.1](18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md) | metadata、AIF、device、GSL API |
 | AudioReach 校准与双域数据库 | [16.6](16_Vendor_QNX_Architecture/16_16.6_ACDB校准体系.md) / [16.7](16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md) | GKV/CKV/TKV、文件列表、QNX 追加库、路径与句柄 |
 | GSL VM 控制与数据缓冲 | [18.2](18_AGM_GSL_Architecture/18_18.2_GSL跨VM控制与缓冲区.md) | HAB 命令/事件、HOST/GUEST、export/import、完成与清理 |
+| GSL 图与 DSP 命令 | [18.3](18_AGM_GSL_Architecture/18_18.3_GSL图生命周期与DSP命令.md) | handle/GKV/共享 SG、状态与应答、data mode 与 buffer 所有权 |
 | Android + QNX 平台全景 | [16.12](16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md) | 执行域、构建/启动边界与不能由静态代码推导的结论 |
 | 新版本机制 | 现存专题作为候选材料，后续独立整理 | 需有对应版本来源后再与本地主线比较 |
 

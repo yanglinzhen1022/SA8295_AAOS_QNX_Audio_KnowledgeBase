@@ -56,7 +56,7 @@
 - [x] 重写 15.9，分开 Car audio 配置、Policy 配置、PAL resource/KV、tinyalsa 卡定义、mixer path、ACDB 与 QNX 配置。
 - [x] 更新三个导航，未改写 PAL 旧文继续标明待核对。
 - [x] 运行 `python3 /tmp/qc-pal-resource-doc-check.py --navigation` 及 GSL VM/校准/AGM/focus/AAOS/Native/HAL-PAL 回归；检查暂存文件编码、围栏、链接及 diff。
-- [ ] 作者自审、记录局限并指定文档提交；继续本地 GSL/内核与剩余层。
+- [x] 作者自审、记录局限并指定文档提交；继续本地 GSL/内核与剩余层。
 
 ## Execution Record
 
@@ -76,4 +76,4 @@
 - Task 2 作者复核追到 Volume 的 tag→MIID→payload→setParam→freeCustomPayload；明确 new[]/free 配对风险、setMixerParameter 名称分配失败释放实参后调用者仍持指针、发送后 Session 返回 0。MFC 的 calloc 与 Volume 不混用。只记录静态风险，不修改产品或声称复现崩溃。
 - Task 3：15.9 与导航完成；区分 RM 固定 SNDPARSER、resource/mixer 的 SKU+声卡后缀、PB 固定 USECASE_XML_FILE、snd-card-parser property；区分 gvmq mixer 复制与 gvmgh Car/Policy 复制条件。保留真实 device_profile 标签和 8/32 声道配置，而非沿用虚构 XML/平台型号表。静态单篇 1 文件 / 9 链接 / 2 摘录 / 1 图 / 0 失败。
 - 全部静态回归：PAL 6/175 links/6 excerpts/5 blocks；GSL VM 6/182/4/5；校准 6/171/9/4；AGM 9/209/10/7；focus 11/218/18/12 且 169 矩阵单元；AAOS 10/203/16/15；Native 11/207/16/20；HAL-PAL 7 文件/9 摘录。全部 0 失败，diff --check 通过。
-- 作者自审不是独立 review；最终独立整体验收尚未启动。没有 Mermaid 渲染、产品构建、实机、IPC、DSP、故障注入或内存检测器运行。8 个拟提交 Markdown 已通过暂存 UTF-8/U+FFFD、围栏奇偶、新增本地链接、工作区/暂存一致性及双 diff 检查。提交前重跑门禁；提交号在下一批起点补记。
+- 作者自审不是独立 review；最终独立整体验收尚未启动。没有 Mermaid 渲染、产品构建、实机、IPC、DSP、故障注入或内存检测器运行。8 个拟提交 Markdown 已通过暂存 UTF-8/U+FFFD、围栏奇偶、新增本地链接、工作区/暂存一致性及双 diff 检查。提交前重跑暂存门禁和 PAL navigation 检查均通过；提交 547cc1f（8 文件，451 insertions/1438 deletions），提交后工作区干净。继续 GSL 图/GPR/data path 批次；整体未完成。
