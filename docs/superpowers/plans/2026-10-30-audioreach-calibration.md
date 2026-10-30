@@ -45,7 +45,7 @@
 - [x] 重写 16.7，保留源配置路径示例，不杜撰复制协议、VM 编号、实际加载拓扑或 mmap 数据共享；未知前端步骤在图中明确。
 - [x] 更新阅读路线，只将两篇已完成内容加入已核对主线；其余 QNX 原文仍待核对。
 - [x] 运行 `python3 /tmp/qc-calibration-doc-check.py --navigation`、AGM/focus/AAOS/Native/HAL-PAL 回归及 `git diff --check`，均通过。提交前另检查暂存 Markdown 编码/围栏/新增链接。
-- [ ] 记录作者自审与未验证事项，指定文件提交后继续 GSL 前后端、资源配置与内核主题。
+- [x] 记录作者自审与未验证事项，8 个指定文档已提交为 `d6d844e`；暂存编码、围栏、新增链接和工作区一致性检查通过，提交后工作区干净。继续 GSL 前后端、资源配置与内核主题。
 
 ## Execution Record
 

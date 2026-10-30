@@ -2,7 +2,7 @@
 
 > 对照源码阅读时，从核心类/接口名快速定位讲解所在章。按层分组，`章节` 列指主要讲解章。[← 返回总目录](README.md) ｜ 目录级速查见 [01.5 关键源码目录速查](01_Architecture_Overview/01_1.5_关键源码目录速查.md)
 
-> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方 4.4、5.1、5.9、5.10、6.1、6.2、8.1、9.1、9.2、9.3、9.4、9.5、9.10、9.11、9.18、10.1、10.6、10.7、12.6、15.2、15.10、15.12、15.99、16.6、16.7、18.1 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
+> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方 4.4、5.1、5.9、5.10、6.1、6.2、8.1、9.1、9.2、9.3、9.4、9.5、9.10、9.11、9.18、10.1、10.6、10.7、12.6、15.2、15.10、15.12、15.99、16.6、16.7、16.12、18.1、18.2 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
 
 ---
 
@@ -116,7 +116,7 @@
 | ContextManager / SndCardMonitor | 15 |
 | tinyalsa pcm_ops / pcm_plugin_ops / AGM PCM 与 mixer 插件 | [15.12 操作分派与计量](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) |
 | AGM / session_obj / aif / graph_obj / device_obj | [18.1 metadata、会话与图生命周期](18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md) |
-| GSL / gsl_fe / gsl_vm_be | [18.1 GSL 接口边界](18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md)；[16.7 VM INIT 与追加数据库](16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md)；其他跨 VM 原文待核对 |
+| GSL / gsl_fe / gsl_vm_be / gsl_be_session | [18.2 控制与缓冲区](18_AGM_GSL_Architecture/18_18.2_GSL跨VM控制与缓冲区.md)、[16.12 双域全景](16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md)；[16.7 VM INIT 与追加数据库](16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md) |
 | ACDB / graph_init / acdb_init / gsl_add_database | [16.6 图与校准查询](16_Vendor_QNX_Architecture/16_16.6_ACDB校准体系.md)、[16.7 双域数据库](16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md)；不以 legacy acdb-loader 代表 AR 主链 |
 | auto-audiod / AutoPower / Silent Boot / audio-chime | 16 |
 | audio_service_vm / ams_lib / apr_lib / audio_dac / audio_expander | 16 |
