@@ -8,14 +8,16 @@
 
 本章按本地 Android 12L + SA8295 AudioReach 实现逐篇整理。先读 [8.1 HAL 边界](../08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md)，再读 **[15.10 HAL-PAL 生命周期](15_15.10_HAL-PAL适配层架构.md)**，遇到类型选择时查 **[15.99 三类对象的工厂映射](15_15.99_附录_Stream-Session-Device映射关系.md)**。
 
-本轮已重写 15.10、15.99；其余文章尚未完成本轮核对。不要把旧文的固定延迟、平台别名、Session/引擎混合清单或跨 VM 简图默认当作本产品已验证事实。
+继续读 [15.2 层次与 AGM 入口](15_15.2_架构层次图.md) → [15.12 tinyalsa 插件](15_15.12_QC_audio-alsa_ALSA层实现.md) → [18.1 AGM 会话与图](../18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md)。
+
+本轮已重写 15.2、15.10、15.12、15.99；其余文章尚未完成本轮核对。不要把旧文的固定延迟、平台别名、Session/引擎混合清单或跨 VM 简图默认当作本产品已验证事实。
 
 ## 目录
 
 ### 第一部分：架构总览与基础定义
 
 - [15.1 概述与目录](15_15.1_概述与目录.md) — PAL定义、历史演进、SA8295虚拟化、源码路径、核心类概览
-- [15.2 架构层次图](15_15.2_架构层次图.md) — 六层架构分层、层间接口协议、SA8295跨VM架构、数据流向
+- [15.2 架构层次图](15_15.2_架构层次图.md) — 逻辑层与进程、Session open/start、控制与 PCM 分工、条件 IPC/GSL 边界
 - [15.3 API分类总览](15_15.3_API_分类总览.md) — 22个PAL C API分类详解、参数结构体、回调机制、错误码
 
 ### 第二部分：类型定义体系
@@ -37,7 +39,7 @@
 
 - [15.10 HAL-PAL 适配层：从一次 PCM write 理解对象与生命周期](15_15.10_HAL-PAL适配层架构.md) — 惰性 Open/start、flags 与 BUS、源码时序、错误回退、standby、录音差异
 - [15.11 编解码器插件 (plugins/codecs/)](15_15.11_编解码器插件_pluginscodecs.md) — BT Offload编解码器插件体系
-- [15.12 QC audio-alsa：ALSA用户空间封装层](15_15.12_QC_audio-alsa_ALSA层实现.md) — tinyalsa封装与ALSA控制
+- [15.12 audio-alsa 与 tinyalsa](15_15.12_QC_audio-alsa_ALSA层实现.md) — MSM 控件库与 PCM/mixer 插件分派、状态和计量单位
 - [15.13 QC GEF：通用音效框架](15_15.13_QC_GEF_通用音效框架.md) — Generic Effect Framework
 - [15.14 QC audio-parsers：音频帧格式解析器](15_15.14_QC_audio-parsers_音频解析器.md) — 压缩音频帧解析
 - [15.15 QC CAPIv2：编解码器统一接口标准](15_15.15_QC_CAPIv2_编解码接口.md) — Codec API v2接口

@@ -4,7 +4,7 @@
 
 **当前整理主线：本地 Android 12L / API 32 + SA8295 + QNX，产品使用 AudioReach。** 本地主线不是 Android 14；新版本机制需与对应版本源码对照，不与主线混写。
 
-> **阅读状态：** 本库正在逐篇源码核对与重构。目前优先阅读下列 Native PCM / Policy、AAOS 路由控制与 HAL → PAL 主线文章；其余原章节保留供查阅，尚未完成本轮核对，可能含旧版本混写、错误映射或未验证流程。目录存在不代表内容已经核验，静态源码分析也不代表实机行为已经验证。
+> **阅读状态：** 本库正在逐篇源码核对与重构。目前优先阅读下列 Native PCM / Policy、AAOS 路由/焦点、HAL → PAL → AGM 主线文章；其余原章节保留供查阅，尚未完成本轮核对，可能含旧版本混写、错误映射或未验证流程。目录存在不代表内容已经核验，静态源码分析也不代表实机行为已经验证。
 
 [术语表](GLOSSARY.md) ｜ [类名反向索引](CLASS_INDEX.md) ｜ [主题阅读入口](#主题去重导航矩阵single-source-of-truth)
 
@@ -28,19 +28,21 @@
 
 进一步深入：[9.3 Zone](09_AAOS_Car_Audio/09_9.3_CarAudioZone-多Zone音频管理.md) → [9.18 配置解析](09_AAOS_Car_Audio/09_9.18_CarAudioZonesHelper-XML配置解析.md)；[9.10 焦点分区](09_AAOS_Car_Audio/09_9.10_CarZonesAudioFocus-多Zone焦点分发器.md) → [9.4 焦点状态](09_AAOS_Car_Audio/09_9.4_CarAudioFocus-车载焦点管理.md) → [12.6 交互矩阵](12_Audio_Focus_Deep_Dive/12_12.6_AAOS焦点交互矩阵.md) → [10.7 HAL 外部请求](10_AudioControl_HAL/10_10.7_HalAudioFocus-外部焦点请求管理.md)。
 
-### 继续向下：HAL → PAL
+### 继续向下：HAL → PAL → AGM
 
 | 顺序 | 文章 | 要回答的问题 |
 |---|---|---|
 | 1 | [8.1 Audio HAL 边界：从 HIDL 接口到 AudioReach 实现](08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md) | HIDL、FMQ、C HAL 与厂商实现怎样衔接？ |
 | 2 | [15.10 HAL-PAL 适配层：从一次 PCM write 理解对象与生命周期](15_PAL_Architecture/15_15.10_HAL-PAL适配层架构.md) | 什么时候 open/start？standby 为什么会 close？正返回为何不证明已发声？ |
+| 3 | [15.2 PAL 到 AGM 的层次](15_PAL_Architecture/15_15.2_架构层次图.md) → [15.12 tinyalsa 插件](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) | pcm/mixer 怎样进入 AGM？用户态 ops 与内核 ioctl 有什么区别？ |
+| 4 | [18.1 AGM 会话与音频图](18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md) | metadata/AIF 为什么先于 open？图、设备和会话怎样启动与清理？ |
 | 随读随查 | [15.99 Stream、Session、Device：工厂映射与适用边界](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) | 三类对象如何分别选择？Non-Tunnel 和检测引擎有哪些边界？ |
 
 以上主线文章配有源码片段、调用关系、时序或状态图。范围以各篇声明为准，不用一个普通 PCM 示例代替所有流类型。
 
 ## 分层学习顺序
 
-目录编号暂时保留，以维持原有文章链接。推荐按知识依赖阅读，不必机械地从 01 顺读到 17。
+目录编号暂时保留，以维持原有文章链接。推荐按知识依赖阅读，不必机械地按目录编号顺读。
 
 ### 第一阶段：建立音频对象与控制关系
 
@@ -50,7 +52,7 @@
 
 ### 第二阶段：跨过标准接口进入平台实现
 
-**08 → 15 → 16**
+**08 → 15 → 18 → 16**
 
 先读上列 HAL-PAL 文章，区分 HIDL/C HAL/PAL 边界，再深入 PAL 内部、AGM/GSL 和 QNX。控制调用、共享缓冲区、PCM API 与跨 VM 消息需要分别追踪，不能用一条粗箭头替代。
 
@@ -87,8 +89,9 @@
 | [13 Volume / Device 专题](13_Volume_Device_Deep_Dive/) | 跨层控制 | 音量与设备切换 |
 | [14 Bluetooth Audio](14_Bluetooth_Audio/) | 外部音频通路 | 蓝牙音频角色、路由和数据通路；注意版本差异 |
 | [15 PAL 架构](15_PAL_Architecture/) | 平台抽象 | HAL-PAL、Stream/Session/Device、资源管理 |
-| [16 Vendor + QNX](16_Vendor_QNX_Architecture/) | 平台与跨域实现 | AGM/GSL、QNX、校准与辅助服务；后续继续整理职责边界 |
+| [16 Vendor + QNX](16_Vendor_QNX_Architecture/) | 平台与跨域实现 | QNX、校准与辅助服务；AGM 深入内容迁至 18，其他原文待核对 |
 | [17 调试与 OEM 指南](17_Debug_and_OEM_Guide/) | 问题定位 | 用各层状态、日志和工具验证假设 |
+| [18 AGM / GSL](18_AGM_GSL_Architecture/) | 图管理 | 当前已整理 AGM 会话、metadata、图与设备生命周期；跨 VM/GSL 细节继续研究 |
 
 ## 本地主线的几个必要边界
 
@@ -114,7 +117,9 @@
 | 车载控制与 duck/mute | [10.1](10_AudioControl_HAL/10_10.1_AudioControl_HAL总览.md) / [10.6](10_AudioControl_HAL/10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) | [9.4 单区域焦点](09_AAOS_Car_Audio/09_9.4_CarAudioFocus-车载焦点管理.md)、[12.6 矩阵](12_Audio_Focus_Deep_Dive/12_12.6_AAOS焦点交互矩阵.md)；12 其余原文仍待核对 |
 | 车载音量组 | [9.5](09_AAOS_Car_Audio/09_9.5_CarVolumeGroup-车载音量组.md) | 9.2、AudioPort gain、AudioControl muting；[13 跨层专题](13_Volume_Device_Deep_Dive/) 原文仍待核对 |
 | 效果处理 | [07](07_Effects_Framework/) | 02、05、HAL；原文待核对 |
-| AGM/GSL 与 QNX 边界 | [16](16_Vendor_QNX_Architecture/) | PAL、跨 VM 控制与数据路径；原文待核对 |
+| PAL 到 AGM 的 PCM/控制桥 | [15.12](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) | tinyalsa、PCM/mixer plugin、计量与状态 |
+| AGM 会话与图 | [18.1](18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md) | metadata、AIF、device、GSL API |
+| QNX / GSL 跨 VM 边界 | [16](16_Vendor_QNX_Architecture/) | 控制与数据路径；原文待核对，不将 18.1 当作跨域实现验证 |
 | 新版本机制 | 现存专题作为候选材料，后续独立整理 | 需有对应版本来源后再与本地主线比较 |
 
-后续会在具备实质内容时补充 AGM/GSL、Kernel Audio、端到端场景和 Android 版本演进专题；当前不生成空目录，也不把设计/实施记录放进学习主线。
+后续继续深化 AGM/GSL，并在具备实质内容时补充 Kernel Audio、端到端场景和 Android 版本演进专题；不生成空目录，也不把设计/实施记录放进学习主线。

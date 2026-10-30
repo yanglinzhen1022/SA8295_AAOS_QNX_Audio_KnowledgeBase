@@ -4,6 +4,10 @@
 
 ---
 
+## 阅读范围
+
+AGM 会话/图深度说明已移至 [18.1](../18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md)，16.10 保留兼容入口。其余本章原文尚待当前 Android 12L + SA8295 AudioReach 主线逐篇核对；尤其不能将 IPC 名字、配置目录或库名当作执行域/实机效果证明。
+
 ## 目录
 
 - [16.1 概述](16_16.1_概述.md)
@@ -15,8 +19,8 @@
 - [16.7 ACDB校准数据Android与QNX双域共享](16_16.7_ACDB校准数据Android与QNX双域共享.md)
 - [16.8 ALSA UCM配置](16_16.8_ALSA_UCM配置.md)
 - [16.9 auto-casa-xml配置](16_16.9_auto-casa-xml配置.md)
-- [16.10 AGM Audio Graph Manager深度解析](16_16.10_AGMAudio_Graph_Manager深度解.md)
-- [16.11 GSL接口与PAL Session的图管理](16_16.11_SessionGsl与GSL接口.md)（注：文件名保留历史标识 SessionGsl，SessionGsl 类已废弃，实走 SessionAlsaPcm/SessionAgm）
+- [16.10 AGM 平台定位与迁移入口](16_16.10_AGMAudio_Graph_Manager深度解.md) → [18.1 会话与音频图](../18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md)
+- [16.11 GSL接口与PAL Session的图管理](16_16.11_SessionGsl与GSL接口.md)（文件名保留历史标识；本地工厂边界见 [15.99](../15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md)，不据此断言类的历史废弃过程）
 - [16.12 Android+QNX双域架构总结](16_16.12_Android+QNX双域架构总结.md)
 - [16.13 Primary HAL AudioReach版深度解析](16_16.13_Primary_HALAudioReach版深度解.md)
 - [16.14 GSL Graph Service Layer内部架构](16_16.14_GSLGraph_Service_Layer内部架.md)
