@@ -2,7 +2,7 @@
 
 > 对照源码阅读时，从核心类/接口名快速定位讲解所在章。按层分组，`章节` 列指主要讲解章。[← 返回总目录](README.md) ｜ 目录级速查见 [01.5 关键源码目录速查](01_Architecture_Overview/01_1.5_关键源码目录速查.md)
 
-> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方 4.4、5.1、5.9、5.10、6.1、6.2、8.1、9.1、9.2、9.3、9.4、9.5、9.10、9.11、9.18、10.1、10.6、10.7、12.6、15.2、15.10、15.12、15.99、16.6、16.7、16.12、18.1、18.2 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
+> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。下方 4.4、5.1、5.9、5.10、6.1、6.2、8.1、9.1、9.2、9.3、9.4、9.5、9.10、9.11、9.18、10.1、10.6、10.7、12.6、15.2、15.6、15.7、15.9、15.10、15.12、15.99、16.6、16.7、16.12、18.1、18.2 直达链接对应已重写文章；其他条目沿用旧索引，可能属于新版本或尚待源码核对，不代表本地均有实现。
 
 ---
 
@@ -112,7 +112,9 @@
 | Session::makeSession / SessionAlsaPcm / SessionAlsaCompress / SessionAlsaVoice / SessionAgm | [15.99 Session 四分支](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) |
 | StreamSoundTrigger / SoundTriggerEngineGsl / StreamACD / ContextDetectionEngine | [15.99 检测引擎与 Session 的持有关系](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) |
 | Device::getInstance / Speaker (PAL) | [15.99 Device 分派与复用](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) |
-| ResourceManager / PayloadBuilder (GKV/CKV/TKV) | 15 |
+| ResourceManager | [15.6 资源、设备配置与状态分发](15_PAL_Architecture/15_15.6_ResourceManager-PAL核心管理模块.md) |
+| PayloadBuilder / selector / GKV / CKV / TKV | [15.7 KV 匹配与模块 payload](15_PAL_Architecture/15_15.7_PayloadBuilder-载荷构建器.md) |
+| SNDPARSER / USECASE_XML_FILE / RM getVendorConfigPath | [15.9 配置消费者与选择路径](15_PAL_Architecture/15_15.9_配置文件列表.md) |
 | ContextManager / SndCardMonitor | 15 |
 | tinyalsa pcm_ops / pcm_plugin_ops / AGM PCM 与 mixer 插件 | [15.12 操作分派与计量](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) |
 | AGM / session_obj / aif / graph_obj / device_obj | [18.1 metadata、会话与图生命周期](18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md) |

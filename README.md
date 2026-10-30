@@ -40,6 +40,8 @@
 | 6 | [18.2 GSL 跨 VM 控制与缓冲区](18_AGM_GSL_Architecture/18_18.2_GSL跨VM控制与缓冲区.md) → [16.12 双域全景](16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md) | 命令和完成为何走不同通道？HOST/GUEST、export ID 与 offset 怎样配合？ |
 | 随读随查 | [15.99 Stream、Session、Device：工厂映射与适用边界](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) | 三类对象如何分别选择？Non-Tunnel 和检测引擎有哪些边界？ |
 
+PAL 资源与配置专题：[15.6 ResourceManager](15_PAL_Architecture/15_15.6_ResourceManager-PAL核心管理模块.md) → [15.7 PayloadBuilder](15_PAL_Architecture/15_15.7_PayloadBuilder-载荷构建器.md) → [15.9 配置地图](15_PAL_Architecture/15_15.9_配置文件列表.md)，解释 FE/设备配置、selector/KV、模块参数和安装选择之间的关系。
+
 以上主线文章配有源码片段、调用关系、时序或状态图。范围以各篇声明为准，不用一个普通 PCM 示例代替所有流类型。
 
 ## 分层学习顺序

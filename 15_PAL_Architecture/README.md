@@ -10,7 +10,9 @@
 
 继续读 [15.2 层次与 AGM 入口](15_15.2_架构层次图.md) → [15.12 tinyalsa 插件](15_15.12_QC_audio-alsa_ALSA层实现.md) → [18.1 AGM 会话与图](../18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md)。
 
-本轮已重写 15.2、15.10、15.12、15.99；其余文章尚未完成本轮核对。不要把旧文的固定延迟、平台别名、Session/引擎混合清单或跨 VM 简图默认当作本产品已验证事实。
+资源与配置专题：[15.6 ResourceManager](15_15.6_ResourceManager-PAL核心管理模块.md) → [15.7 PayloadBuilder](15_15.7_PayloadBuilder-载荷构建器.md) → [15.9 配置选择与安装](15_15.9_配置文件列表.md)。
+
+本轮已重写 15.2、15.6、15.7、15.9、15.10、15.12、15.99；其余文章尚未完成本轮核对。不要把旧文的固定延迟、平台别名、Session/引擎混合清单或跨 VM 简图默认当作本产品已验证事实。
 
 ## 目录
 
@@ -30,10 +32,10 @@
 
 ### 第四部分：核心管理模块
 
-- [15.6 ResourceManager架构地位](15_15.6_ResourceManager-PAL核心管理模块.md) — 单例模式、流注册/注销、设备路由、FE/BE分配、SSR处理、并发策略
-- [15.7 PayloadBuilder核心职责](15_15.7_PayloadBuilder-载荷构建器.md) — GKV/CKV/TKV构建、模块配置Payload、DSP模块API、kvh2xml映射
+- [15.6 ResourceManager架构地位](15_15.6_ResourceManager-PAL核心管理模块.md) — 构造与初始化、FE 分类与归还、设备配置、流登记、EC/并发及 SSR 边界
+- [15.7 PayloadBuilder核心职责](15_15.7_PayloadBuilder-载荷构建器.md) — selector 匹配与 fallback、KV 重载、MIID、Volume/MFC 参数及内存/错误责任
 - [15.8 HIDL接口定义](15_15.8_HIDL_接口定义.md) — IPAL.hal接口、服务端/客户端实现、IPC机制、SA8295安全模型、HIDL→AIDL演进
-- [15.9 配置文件列表](15_15.9_配置文件列表.md) — 平台 XML、device_profile/EC ref/VSID 等资料；不由目录代号直接推断 SA8295 产品配置
+- [15.9 配置文件列表](15_15.9_配置文件列表.md) — 车载源码与安装条件、SNDPARSER/SKU/USECASE_XML_FILE、按消费者区分配置
 
 ### 第五部分：HAL适配与插件体系
 
