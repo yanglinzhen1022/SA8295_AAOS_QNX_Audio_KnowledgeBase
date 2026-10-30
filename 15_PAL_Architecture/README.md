@@ -4,6 +4,12 @@
 
 ---
 
+## 本章怎样读
+
+本章按本地 Android 12L + SA8295 AudioReach 实现逐篇整理。先读 [8.1 HAL 边界](../08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md)，再读 **[15.10 HAL-PAL 生命周期](15_15.10_HAL-PAL适配层架构.md)**，遇到类型选择时查 **[15.99 三类对象的工厂映射](15_15.99_附录_Stream-Session-Device映射关系.md)**。
+
+本轮已重写 15.10、15.99；其余文章尚未完成本轮核对。不要把旧文的固定延迟、平台别名、Session/引擎混合清单或跨 VM 简图默认当作本产品已验证事实。
+
 ## 目录
 
 ### 第一部分：架构总览与基础定义
@@ -14,22 +20,22 @@
 
 ### 第二部分：类型定义体系
 
-- [15.4 流类型与设备类型](15_15.4_流类型_pal_stream_type_t.md) — pal_stream_type_t(27种)、pal_device_id_t(43种)、pal_audio_fmt_t、pal_stream_attributes
+- [15.4 流类型与设备类型](15_15.4_流类型_pal_stream_type_t.md) — 流、设备、格式与属性定义；枚举与支持范围待继续核对
 
 ### 第三部分：核心类层次
 
-- [15.5 核心类层次图：Stream-Device-Session](15_15.5_核心类层次图-Stream-Device-Session.md) — Stream基类+9子类、Device基类+18子类、Session基类+5子类+3引擎、状态机、工厂方法、SA8295跨VM路径
+- [15.5 核心类层次图：Stream-Device-Session](15_15.5_核心类层次图-Stream-Device-Session.md) — 原有类层次与状态机资料；当前工厂映射及检测引擎边界先读 15.99
 
 ### 第四部分：核心管理模块
 
 - [15.6 ResourceManager架构地位](15_15.6_ResourceManager-PAL核心管理模块.md) — 单例模式、流注册/注销、设备路由、FE/BE分配、SSR处理、并发策略
 - [15.7 PayloadBuilder核心职责](15_15.7_PayloadBuilder-载荷构建器.md) — GKV/CKV/TKV构建、模块配置Payload、DSP模块API、kvh2xml映射
 - [15.8 HIDL接口定义](15_15.8_HIDL_接口定义.md) — IPAL.hal接口、服务端/客户端实现、IPC机制、SA8295安全模型、HIDL→AIDL演进
-- [15.9 配置文件列表](15_15.9_配置文件列表.md) — 6个SoC平台配置(bengal/kona/lahaina/monaco/msmnile/taro，monaco=SA8295)、XML结构详解、device_profile/EC ref/VSID、平台差异
+- [15.9 配置文件列表](15_15.9_配置文件列表.md) — 平台 XML、device_profile/EC ref/VSID 等资料；不由目录代号直接推断 SA8295 产品配置
 
 ### 第五部分：HAL适配与插件体系
 
-- [15.10 HAL-PAL适配层架构](15_15.10_HAL-PAL适配层架构.md) — AudioDevice/StreamOut/StreamIn/AudioVoice、参数映射、audio_extn扩展、SA8295车机特化
+- [15.10 HAL-PAL 适配层：从一次 PCM write 理解对象与生命周期](15_15.10_HAL-PAL适配层架构.md) — 惰性 Open/start、flags 与 BUS、源码时序、错误回退、standby、录音差异
 - [15.11 编解码器插件 (plugins/codecs/)](15_15.11_编解码器插件_pluginscodecs.md) — BT Offload编解码器插件体系
 - [15.12 QC audio-alsa：ALSA用户空间封装层](15_15.12_QC_audio-alsa_ALSA层实现.md) — tinyalsa封装与ALSA控制
 - [15.13 QC GEF：通用音效框架](15_15.13_QC_GEF_通用音效框架.md) — Generic Effect Framework
@@ -40,4 +46,4 @@
 
 ### 附录
 
-- [15.99 Stream-Session-Device映射关系](15_15.99_附录_Stream-Session-Device映射关系.md) — 三维映射表、音频路径类型、EC参考映射、并发流组合、SA8295车机特有映射
+- [15.99 Stream、Session、Device：工厂映射与适用边界](15_15.99_附录_Stream-Session-Device映射关系.md) — 分开理解三个工厂、Non-Tunnel → SessionAgm、检测引擎持有关系与设备复用

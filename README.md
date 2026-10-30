@@ -1,101 +1,96 @@
-# SA8295 AAOS + QNX 双域音频架构知识库
+# SA8295 AAOS + QNX AudioReach 音频知识库
 
-Android 14 (AAOS/GVM) + QNX (PVM) 双域架构、高通SA8295平台音频子系统深度解析，共17篇，覆盖从应用层API到QNX底层驱动、跨VM通信的完整体系。
+面向分层学习与源码阅读：从应用 API、Framework、AudioFlinger 和策略，到 Audio HAL、PAL、AGM/GSL、QNX 与设备侧实现，再把各层放回播放、录音、车载路由和故障定位场景。
 
-> **基线**：AOSP Android 14 + 高通 SA8295 BSP。**规模**：17 章 / 237 文件 / ~11.5 万行。**质量**：Mermaid 图 1186（渲染 0 失败）、内部导航 ~1843 链接（0 断链）。**末次校验**：2026-07。
-> **快速索引**：[术语缩略语表 GLOSSARY](GLOSSARY.md) ｜ [源码类名 → 讲解章节 反向索引](CLASS_INDEX.md) ｜ [主题去重导航矩阵](#主题去重导航矩阵single-source-of-truth)
+**当前整理主线：本地 Android 12L / API 32 + SA8295 + QNX，产品使用 AudioReach。** 本地主线不是 Android 14；新版本机制需与对应版本源码对照，不与主线混写。
 
----
+> **阅读状态：** 本库正在逐篇源码核对与重构。目前优先阅读下列三篇 HAL → PAL 样章；其余原章节保留供查阅，尚未完成本轮核对，可能含旧版本混写、错误映射或未验证流程。目录存在不代表内容已经核验，静态源码分析也不代表实机行为已经验证。
 
-## 目录
+[术语表](GLOSSARY.md) ｜ [类名反向索引](CLASS_INDEX.md) ｜ [主题阅读入口](#主题去重导航矩阵single-source-of-truth)
 
-| 序号 | 文件 | 主题 | 关键类/流程 |
-|------|------|------|-------------|
-| 01 | [01_Architecture_Overview/](01_Architecture_Overview/) | 架构总论 | 7层分层图、5大状态机、Binder IPC地图、AOSP14新特性演进、播放/录音全栈数据流、系统启动时序、交叉引用导航 |
-| 02 | [02_Application_Layer/](02_Application_Layer/) | 应用层API(14节) | AudioTrack/Record时序、AAudio MMAP、AAudio服务端oboeservice、AudioTrack pause()/flush()深度解析+setVolume()/VolumeShaper音量渐变、MediaPlayer/NuPlayer、MediaCodec/Extractor/MetadataRetriever |
-| 03 | [03_Java_Framework_Layer/](03_Java_Framework_Layer/) | Java框架层 | AudioService、MFC焦点栈、PAM duck/fade/mute、AudioMode状态机 |
-| 04 | [04_Native_Framework_Layer/](04_Native_Framework_Layer/) | Native框架层 | AudioSystem路由缓存、AudioTrackClientProxy、Binder IPC 5步时序、AudioMmapStreamInterface、IAudioFlingerService AIDL、IAudioTrackCallback/IAudioRecordCallback、audio_utils(ChannelMix/resampler/fifo) |
-| 05 | [05_AudioFlinger/](05_AudioFlinger/) | AudioFlinger引擎 | Thread体系、FastMixer、createTrack时序、AudioMixer引擎、DeviceEffectManager、MelReporter/SoundDoseManager、PatchCommandThread、BufLog、SpatializerThread+BitPerfectThread |
-| 06 | [06_Audio_Policy_Engine/](06_Audio_Policy_Engine/) | 音频策略引擎 | getOutputForAttrInt、ProductStrategy、VolumeGroup曲线、EngineConfigurable(PFW)、EngineConfig、EngineInterface、VolumeCurve插值、LastRemovableMediaDevices、AudioPolicyManagerObserver |
-| 07 | [07_Effects_Framework/](07_Effects_Framework/) | 音效框架(12节) | EffectChain process_l、Insert/Auxiliary、Spatializer、AEC/NS算法、LoudnessEnhancer、EffectHandle Binder代理、DeviceEffectProxy设备级代理、libeffects内置音效Native实现 |
-| 08 | [08_HAL_Layer/](08_HAL_Layer/) | HAL抽象层 | AIDL IModule 8子模块、StreamDescriptor、AudioGain模型、IModule/ISoundDose/ITelephony AIDL接口、libaudiohal适配层 |
-| 09 | [09_AAOS_Car_Audio/](09_AAOS_Car_Audio/) | 车载音频系统 | CarAudioService、多Zone架构、交互矩阵、CarVolumeGroup、CarAudioZoneConfig、CarZonesAudioFocus、CarAudioDynamicRouting、CarVolume、CarAudioGainMonitor、CarDucking、MirrorRequestHandler、MediaRequestHandler、CoreAudioHelper |
-| 10 | [10_AudioControl_HAL/](10_AudioControl_HAL/) | 车载音频控制HAL | evaluateFocusRequest、Ducking/Muting流程、AudioControlWrapperAidl、HalAudioFocus外部焦点、IAudioGainCallback增益回调、IModuleChangeCallback模块变更 |
-| 11 | [11_Vendor_Layer/](11_Vendor_Layer/) | Vendor定制层 | audio_policy_configuration.xml属性详解、car_audio_configuration深度解析、OEM定制矩阵、AIDL/HIDL HAL架构 |
-| 12 | [12_Audio_Focus_Deep_Dive/](12_Audio_Focus_Deep_Dive/) | Audio Focus深度解析 | Focus栈模型、duck/fade/mute执行、通话Muting、FadeOutManager、PlaybackActivityMonitor Duck配置、FocusRequester Limbo状态、多用户隔离 |
-| 13 | [13_Volume_Device_Deep_Dive/](13_Volume_Device_Deep_Dive/) | Volume & Device深度解析 | Volume状态机、SoundDose CSD算法(IEC 62368-1)、MelProcessor/MelAggregator、Device路由迁移、USB/HDMI管理 |
-| 14 | [14_Bluetooth_Audio/](14_Bluetooth_Audio/) | 蓝牙音频深度解析 | A2DP Codec/Offload、LE Audio BAP/CAP/ASCS/MICP/CSIP/TMAP、LC3编码、SCO/HFP状态机、LE Audio Broadcast |
-| 15 | [15_PAL_Architecture/](15_PAL_Architecture/) | PAL架构深度解析 | PAL API层、Stream/Device/Session类层次、ResourceManager单例、PayloadBuilder(GKV/CKV/TKV)、IPC机制(HIDL)、XML配置、HAL-PAL适配层、Plugins、ContextManager、SndCardMonitor、核心时序图(播放/路由/SSR/语音/EC)、QC辅助模块(audio-alsa/GEF/audio-parsers/CAPIv2/CASA/SoundTrigger) |
-| 16 | [16_Vendor_QNX_Architecture/](16_Vendor_QNX_Architecture/) | Vendor+QNX双域架构深度解析 | auto-audiod守护进程、AutoPower+VHAL集成、Silent Boot监控、audio-chime早期提示音、ACDB校准体系、QNX侧ACDB校准数据、ALSA UCM配置、auto-casa-xml配置、AGM深度解析、GSL接口与PAL Session图管理(注:SessionGsl为历史遗留,实走SessionAlsaPcm)、Primary HAL(AR版)深度解析、GSL内部架构深度解析、Android+QNX双域架构总结、Q&A、QNX VM隔离层(audio_driver_vm/audio_service_vm/ams_lib/apr_lib)、QNX辅助库(audio_a2b/audio_dac/audio_expander) |
-| 17 | [17_Debug_and_OEM_Guide/](17_Debug_and_OEM_Guide/) | 调试方法与OEM定制指南(15节) | dumpsys audio、logcat过滤、问题定位、systrace/perfetto追踪、AF详细dump解读、AAOS CarAudio调试、AudioPolicy配置验证、延迟调试深度指南、录音调试、HAL调试、音效调试、OEM深度定制 |
+## 从这里开始：HAL → PAL 源码样章
 
----
+| 顺序 | 文章 | 要回答的问题 |
+|---|---|---|
+| 1 | [8.1 Audio HAL 边界：从 HIDL 接口到 AudioReach 实现](08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md) | HIDL、FMQ、C HAL 与厂商实现怎样衔接？ |
+| 2 | [15.10 HAL-PAL 适配层：从一次 PCM write 理解对象与生命周期](15_PAL_Architecture/15_15.10_HAL-PAL适配层架构.md) | 什么时候 open/start？standby 为什么会 close？正返回为何不证明已发声？ |
+| 随读随查 | [15.99 Stream、Session、Device：工厂映射与适用边界](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) | 三类对象如何分别选择？Non-Tunnel 和检测引擎有哪些边界？ |
 
-## 架构分层总览
+三篇配有源码片段、调用关系、时序或状态图。范围以各篇声明为准，不用一个普通 PCM 示例代替所有流类型。
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                   Layer 7: Application                       │
-│   AudioTrack / AudioRecord / AAudio / MediaPlayer / ExoPlayer│
-├──────────────────────────────────────────────────────────────┤
-│                 Layer 6: Java Framework                       │
-│   AudioService / MediaFocusControl / PlaybackActivityMonitor │
-│   AudioDeviceBroker / AudioMode(6种模式) / Capture仲裁(5层) │
-├──────────────────────────────────────────────────────────────┤
-│                Layer 5: Native Framework                      │
-│   libaudioclient(Binder IPC) / AudioSystem(路由缓存)          │
-├──────────────────────────────────────────────────────────────┤
-│                  Layer 4: AudioFlinger                        │
-│   Thread体系 / AudioMixer+Resampler / PatchPanel / Track     │
-├──────────────────────────────────────────────────────────────┤
-│              Layer 3: Audio Policy Engine                     │
-│   AudioPolicyManager / ProductStrategy / VolumeGroup / Engine │
-├──────────────────────────────────────────────────────────────┤
-│              Layer 2: Effects Framework                       │
-│   EffectChain / EffectModule / Spatializer                   │
-├──────────────────────────────────────────────────────────────┤
-│              Layer 1: HAL + Vendor + AAOS                     │
-│   Audio HAL(AIDL/HIDL) / AudioControl HAL / Config / BT HAL │
-├──────────────────────────────────────────────────────────────┤
-│            Layer 0: Vendor Platform (SA8295)                  │
-│   PAL / AGM / GSL / APM(SPF) / ACDB / auto-audiod / audio-chime / UCM / QNX  │
-└──────────────────────────────────────────────────────────────┘
-```
+## 分层学习顺序
 
----
+目录编号暂时保留，以维持原有文章链接。推荐按知识依赖阅读，不必机械地从 01 顺读到 17。
 
-## 阅读建议
+### 第一阶段：建立音频对象与控制关系
 
-- **入门路径**: 01 → 02 → 03 → 05 → 08
-- **4大状态机**: 03(AudioMode) → 12(Focus) → 13(Volume+Device)
-- **策略与路由**: 01 → 06 → 13 → 08
-- **车载专项**: 01 → 09 → 10 → 11 → 17(Debug放最后)
-- **蓝牙专项**: 02 → 03 → 14
-- **全栈调用链**: 05(播放/录音) → 12(Focus链路) → 13(Volume/Device链路)
-- **调试定位**: 05 → 17(最后阅读)
-- **Vendor平台**: 08 → 15 → 16 (PAL→AGM→GSL→APM→ACDB→auto-audiod→QNX)
-- **双域架构**: 15(PAL) → 16(Vendor+QNX) → 09(AAOS车载)
-- **AudioReach架构**: 15(PAL) → 16.10(AGM) → 16.13(Primary HAL AR版) → 16.14(GSL内部架构) → 16.11(GSL接口与PAL Session图管理；`SessionGsl`为历史遗留,实走`SessionAlsaPcm`)
+**01 → 02 → 03 → 04 → 05 → 06 → 07**
 
----
+先理解应用创建什么、Framework 管什么、AudioFlinger 怎样处理数据、Policy 怎样选择路由，以及效果处理放在哪里。策略、焦点和音量是控制关系，不能都画成串联的 PCM 搬运层。
+
+### 第二阶段：跨过标准接口进入平台实现
+
+**08 → 15 → 16**
+
+先读本批样章，区分 HIDL/C HAL/PAL 边界，再深入 PAL 内部、AGM/GSL 和 QNX。控制调用、共享缓冲区、PCM API 与跨 VM 消息需要分别追踪，不能用一条粗箭头替代。
+
+### 第三阶段：理解 AAOS 与跨层主题
+
+**09 → 10 → 11，再按问题读 12 / 13 / 14**
+
+把 CarAudioService、多区域、AudioControl、平台配置与焦点/音量/设备联系起来。核心 Audio HAL 与 AudioControl HAL 是不同接口，不要仅凭其中一者的 HIDL/AIDL 版本推断另一者。
+
+### 第四阶段：按现象回到各层
+
+**17，并回查相应层的实现**
+
+调试章节放在原理之后学习。先区分 Java AudioService、AudioFlinger、AudioPolicy 和 HAL/PAL 的观察范围，再判断问题属于哪层；不把某条日志或某个成功返回码当作完整链路成功。
+
+以上路线中，除明确列出的样章外，原文仍在整理。新版本主题可作为查阅线索，不作为本地 Android 12L 的实现依据。
+
+## 章节目录
+
+| 章节 | 学习层次 | 主要问题 |
+|---|---|---|
+| [01 架构总览](01_Architecture_Overview/) | 全局模型 | 对象、层次、控制流和数据流怎样关联 |
+| [02 应用层](02_Application_Layer/) | 应用 API | AudioTrack、AudioRecord、AAudio 与媒体播放入口 |
+| [03 Java Framework](03_Java_Framework_Layer/) | Java 服务 | AudioService、焦点、播放状态管理 |
+| [04 Native Framework](04_Native_Framework_Layer/) | Native 客户端/接口 | AudioSystem、客户端代理、跨进程衔接 |
+| [05 AudioFlinger](05_AudioFlinger/) | 音频引擎 | Track、线程、混音、播放与录音处理 |
+| [06 Audio Policy](06_Audio_Policy_Engine/) | 策略 | 输出选择、路由、策略与音量组 |
+| [07 Effects](07_Effects_Framework/) | 音效 | 效果链、处理位置与生命周期 |
+| [08 Audio HAL](08_HAL_Layer/) | 标准接口边界 | 本地主线的 HIDL、FMQ、C HAL 与 Patch |
+| [09 AAOS Car Audio](09_AAOS_Car_Audio/) | 车载服务 | 区域、焦点、音量组与动态路由 |
+| [10 AudioControl HAL](10_AudioControl_HAL/) | 车载控制接口 | 车载系统与 Android 音频控制的交互 |
+| [11 Vendor 定制](11_Vendor_Layer/) | 平台配置 | Android 音频配置与厂商扩展边界 |
+| [12 Audio Focus 专题](12_Audio_Focus_Deep_Dive/) | 跨层控制 | 焦点状态及抢占后的动作 |
+| [13 Volume / Device 专题](13_Volume_Device_Deep_Dive/) | 跨层控制 | 音量与设备切换 |
+| [14 Bluetooth Audio](14_Bluetooth_Audio/) | 外部音频通路 | 蓝牙音频角色、路由和数据通路；注意版本差异 |
+| [15 PAL 架构](15_PAL_Architecture/) | 平台抽象 | HAL-PAL、Stream/Session/Device、资源管理 |
+| [16 Vendor + QNX](16_Vendor_QNX_Architecture/) | 平台与跨域实现 | AGM/GSL、QNX、校准与辅助服务；后续继续整理职责边界 |
+| [17 调试与 OEM 指南](17_Debug_and_OEM_Guide/) | 问题定位 | 用各层状态、日志和工具验证假设 |
+
+## 本地主线的几个必要边界
+
+- Android 版本依据本地版本定义中的 API 32；产品源码中 `msmnile_gvmq/manifest.xml` 声明核心 audio/effects HIDL 6.0、AudioControl AIDL v1。**声明不等于最终运行服务已核验。**
+- AudioReach 是本次学习与重构范围，不展开其他厂商音频架构分支。
+- PAL 的 Stream、Session、Device 是不同抽象；`NON_TUNNEL` 在本地 Session 工厂中选择 `SessionAgm`，不能把全平台写成统一的 `SessionAlsaPcm`。
+- 源码根目录：Android 为 `Android/lagvm/LINUX/android/`；QNX 音频为 `Qnx/apps/qnx_ap/AMSS/multimedia/audio/`。文章内给出相对根目录的文件/函数位置，不把它们写成失效的知识库内部链接。
+- 本库不提供从静态代码即可成立的整机延迟、物理接线或运行效果保证；涉及这些问题，应补充相应配置与实测条件。
 
 ## 主题去重导航矩阵（Single Source of Truth）
 
-多个主题会跨章从不同视角出现（如"焦点"在应用/Java/车载/HAL 各层都有涉及）。为避免误读为"内容重复"，下表约定每个主题的**权威章节**（深入原理以此为准）与**其它视角章节**（仅从本层职责切入，细节回链权威章）。阅读时**先读权威章建立完整模型，再按需查看视角章**。
+下表约定深入讲解的组织位置，而非为未整理原文作正确性背书。先建立主题模型，再回到各层看它怎样参与；跨层专题不重复复制所有层内实现。
 
-| 主题 | 权威章节（深入原理） | 其它视角章节（分层引用，细节回链权威章） |
-|------|---------------------|------------------------------------------|
-| 音频焦点 Focus | [12 Audio Focus 深度解析](12_Audio_Focus_Deep_Dive/) | 03(Java MFC 焦点栈)、09(车载多 Zone 焦点)、10(AudioControl HAL 外部焦点)、01(状态机总览) |
-| duck/fade/mute 抢占动作 | [12 Audio Focus 深度解析](12_Audio_Focus_Deep_Dive/) | 09(车载 Ducking)、10(HAL Ducking/Muting)、03(PAM Duck 配置) |
-| 音量 Volume | [13 Volume 状态机](13_Volume_Device_Deep_Dive/) + [06 VolumeGroup 曲线](06_Audio_Policy_Engine/) | 09(车载音量组)、05(AF 音量应用)、01(状态机总览) |
-| 设备路由 Device | [13 Device 状态机/迁移](13_Volume_Device_Deep_Dive/) | 08(Audio Patch/Port 硬件路由)、06(动态路由策略)、09(车载动态路由) |
-| 音效 Effect | [07 音效框架](07_Effects_Framework/) | 05(AF EffectChain 挂载/process_l)、02(应用侧 AudioEffect API)、08(HAL 侧) |
-| 声剂量 SoundDose/CSD/MEL | [13 SoundDose 与 CSD](13_Volume_Device_Deep_Dive/) | 05(MelReporter/SoundDoseManager)、08(ISoundDose HAL)、04(audio_utils MEL 工具) |
-| PAL Session/GSL 图管理 | [15 PAL 架构](15_PAL_Architecture/) | 16(AGM/GSL 内部与 QNX 侧实现)。注：`SessionGsl` 为历史遗留（`.cpp` 已移除），SA8295 实际走 `SessionAlsaPcm` 等 4 分支，详见 15.5/15.99 更正说明 |
-| 跨 VM 通信 MM-HAB | [16 Vendor+QNX 双域架构](16_Vendor_QNX_Architecture/) | 15(PAL 经 AGM→gsl_fe→HAB→gsl_vm_be 调 DSP)、01(双域总览) |
+| 主题 | 优先入口 | 关联层 |
+|---|---|---|
+| HAL 边界与 FMQ | [8.1](08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md) | AudioFlinger、libaudiohal、厂商 HAL |
+| HAL-PAL 适配与普通 PCM 生命周期 | [15.10](15_PAL_Architecture/15_15.10_HAL-PAL适配层架构.md) | 08、PAL 内部 |
+| Stream / Session / Device 映射 | [15.99](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md) | HAL flags、设备与 PAL 工厂 |
+| 焦点与 duck/mute | [12](12_Audio_Focus_Deep_Dive/) | 03、09、10；原文待核对 |
+| 音量与设备路由 | [13](13_Volume_Device_Deep_Dive/) / [06](06_Audio_Policy_Engine/) | 05、08、09；原文待核对 |
+| 效果处理 | [07](07_Effects_Framework/) | 02、05、HAL；原文待核对 |
+| AGM/GSL 与 QNX 边界 | [16](16_Vendor_QNX_Architecture/) | PAL、跨 VM 控制与数据路径；原文待核对 |
+| 新版本机制 | 现存专题作为候选材料，后续独立整理 | 需有对应版本来源后再与本地主线比较 |
 
-> **去重原则**：本库不做物理内容合并（各篇保持独立可读），而以本矩阵约定权威源。若发现某"视角章节"重复展开了本应属于"权威章节"的深层原理，应精简为要点 + 回链，而非两处各维护一份。
-
----
-
-> 本知识库基于 Android 14 (AOSP) + 高通SA8295平台源码分析，覆盖AOSP标准架构与Vendor平台特有实现，适用于 AAOS 车载音频系统开发与定制。
+后续会在具备实质内容时补充 AGM/GSL、Kernel Audio、端到端场景和 Android 版本演进专题；当前不生成空目录，也不把设计/实施记录放进学习主线。
