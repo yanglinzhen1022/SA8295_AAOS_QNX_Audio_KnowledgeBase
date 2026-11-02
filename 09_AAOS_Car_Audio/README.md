@@ -19,7 +19,9 @@
 
 > 以下完整目录保留旧入口；除上述主线外尚未完成本轮核对。镜像、CarAudioZoneConfig、CarAudioGainMonitor 等旧文不能直接作为本地实现依据。声明/配置、策略注册与真实设备效果也应分开看。
 
-## 完整目录（含待核对旧文）
+## 完整目录（含兼容入口）
+
+> 9.9/9.13/9.15/9.16/9.17 为**兼容入口**（描述的类不在本树：CarAudioZoneConfig/CarAudioGainMonitor/CarAudioMirrorRequestHandler/MediaRequestHandler/CoreAudioHelper 均为 13+/14+ 机制，原文可从 Git 历史恢复）；9.6/9.7/9.8/9.12/9.14 已按 12L 源码补版本边界与勘误。
 
 - [9.1 AAOS音频系统总览](09_9.1_AAOS音频系统总览.md)
 - [9.2 CarAudioService — 车载音频核心服务](09_9.2_CarAudioService-车载音频核心服务.md)

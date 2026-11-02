@@ -11,7 +11,7 @@
 3. [12.6 AAOS 交互矩阵](12_12.6_AAOS焦点交互矩阵.md)：完整本地矩阵、方向性和并发条件。
 4. [10.7 HalAudioFocus](../10_AudioControl_HAL/10_10.7_HalAudioFocus-外部焦点请求管理.md)：外部音源如何请求、收到反馈及清理。
 
-> 本章除 12.6 外仍为待核对旧文，可能混入新版本状态、执行算法和错误性能结论。保留目录用于定位，不将标题和旧代码块视为本地已验证行为。AAOS 外部策略与普通 Android 焦点栈需要分别研究。
+> 本章 12.1/12.3/12.4/12.5/12.7/12.9/12.11/12.12/12.13/12.14 已完成 12L 校准（行号勘误 + 强 Duck 版本边界：-35dB 强 Duck 为 14+ 机制不在本树，12L 仅 DUCK_VSHAPE -14dB）；12.2/12.8/12.10 等其余旧文仍待核对，不将标题和旧代码块视为本地已验证行为。
 
 ## 完整目录
 
@@ -19,11 +19,11 @@
 |---|---|
 | [12.1 Focus 栈模型与核心数据结构](12_12.1_Focus栈模型与核心数据结构.md) | 待核对：普通 Framework 数据结构 |
 | [12.2 完整焦点状态机](12_12.2_完整焦点状态机含Fade_Limbo状态.md) | 待核对：版本与状态边界 |
-| [12.3 requestAudioFocus 流程](12_12.3_requestAudioFocus完整流程.md) | 待核对 |
-| [12.4 Loss 传播与映射](12_12.4_焦点Loss传播与Loss类型映射.md) | 待核对 |
-| [12.5 Framework 执行机制](12_12.5_框架级焦点执行机制.md) | 待核对：duck/fade/mute 条件 |
+| [12.3 requestAudioFocus 流程](12_12.3_requestAudioFocus完整流程.md) | 已校准行号（12L L874-1054） |
+| [12.4 Loss 传播与映射](12_12.4_焦点Loss传播与Loss类型映射.md) | 已校准行号（:248） |
+| [12.5 Framework 执行机制](12_12.5_框架级焦点执行机制.md) | 已校准（强 Duck 为 14+ 边界） |
 | [12.6 AAOS 焦点交互矩阵](12_12.6_AAOS焦点交互矩阵.md) | 已按本地 FocusInteraction 重写 |
-| [12.7 abandonAudioFocus](12_12.7_abandonAudioFocus流程.md) | 待核对 |
+| [12.7 abandonAudioFocus](12_12.7_abandonAudioFocus流程.md) | 已校准行号（:1058） |
 | [12.8 Audio Focus 跨层链路](12_12.8_Audio_Focus全栈调用链.md) | 待核对 |
 | [12.9 通话 Muting](12_12.9_通话Muting机制.md) | 待核对 |
 | [12.10 FadeOutManager](12_12.10_FadeOutManager深度解析.md) | 待核对 |

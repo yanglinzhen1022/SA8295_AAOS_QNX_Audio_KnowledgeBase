@@ -9,9 +9,9 @@
 本篇深度解析AOSP14音频子系统中的**音量控制（Volume）**、**设备管理（Device）**和**听力保护（CSD）**三大核心机制，涵盖Java Framework层到Native C++层的完整技术链路。
 
 **核心源码规模**：
-- [`AudioService.java`](frameworks/base/services/core/java/com/android/server/audio/AudioService.java) — 13267行，Volume/Device核心逻辑
-- [`AudioDeviceBroker.java`](frameworks/base/services/core/java/com/android/server/audio/AudioDeviceBroker.java) — 2357行，设备路由管理
-- [`AudioDeviceInventory.java`](frameworks/base/services/core/java/com/android/server/audio/AudioDeviceInventory.java) — ~2350行，设备连接状态管理
+- [`AudioService.java`](frameworks/base/services/core/java/com/android/server/audio/AudioService.java) — 10861行（wc -l，12L），Volume/Device核心逻辑
+- [`AudioDeviceBroker.java`](frameworks/base/services/core/java/com/android/server/audio/AudioDeviceBroker.java) — 1961行（wc -l，12L），设备路由管理
+- [`AudioDeviceInventory.java`](frameworks/base/services/core/java/com/android/server/audio/AudioDeviceInventory.java) — 1430行（wc -l，12L），设备连接状态管理
 - （12L：安全音量在 `AudioService.java` 内实现，无独立 SoundDoseHelper 类）
 - （Android 14+ 的 `MelProcessor.cpp`/`MelAggregator.cpp` 不在本树，见13.6/13.7兼容入口）
 

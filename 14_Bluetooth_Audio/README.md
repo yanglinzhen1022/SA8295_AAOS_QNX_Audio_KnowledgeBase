@@ -1,6 +1,6 @@
 # 第十四篇：Bluetooth Audio 深度解析（本树 12L：A2DP / HFP-SCO / ASHA；LE Audio 为兼容入口）
 
-> **树边界**：本树蓝牙栈为 `system/bt` 原生实现（无 packages/modules/Bluetooth Java Profile 服务）。14.3/14.7/14.8/14.9/14.10 为 LE Audio 兼容入口（Android 13/14 机制不在本树，保留版本边界与 12L 等价物）。
+> **树边界**：本树蓝牙 = `system/bt` 原生栈 + 经典蓝牙应用 `packages/apps/Bluetooth`（A2dp/HearingAid/LE Audio Java Profile 服务在此）；**无** 13+ 的 mainline 模块 `packages/modules/Bluetooth` 与 14+ 的 AIDL audio `IBluetooth*`。LE Audio 在 12L 为早期未完成实现（见 14.3）；14.7–14.10 的 13+/14+ 机制（LC3 协商、BASS/Broadcast、VCP）按版本边界保留为兼容入口，原文可从 Git 历史恢复。
 
 > [← 上一篇](../13_Volume_Device_Deep_Dive/README.md) | [返回导航](../README.md) | [下一篇 →](../15_PAL_Architecture/README.md)
 

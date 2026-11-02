@@ -47,7 +47,7 @@
 |-----------|------|------|----------|
 | PAL | Platform Audio Layer | 高通平台音频层（Stream/Device/Session） | 15 |
 | AGM | Audio Graph Manager | 音频图管理器 | 16 |
-| GSL | Graphite Service Layer | 图服务层（AudioReach 图运行时） | 16 |
+| GSL | Graph Service Layer | 图服务层（AudioReach 图运行时，gsl_intf.h:7 原文全称） | 16 |
 | SPF | Signal Processing Framework | 信号处理框架（DSP 侧） | 16 |
 | APM(SPF) | Audio Processing Manager | SPF 侧音频处理管理（区别于 Android APM） | 16 |
 | ACDB | Audio Calibration DataBase | 音频校准数据库 | 16 |
