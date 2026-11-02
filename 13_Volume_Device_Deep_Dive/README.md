@@ -12,9 +12,8 @@
 - [`AudioService.java`](frameworks/base/services/core/java/com/android/server/audio/AudioService.java) — 13267行，Volume/Device核心逻辑
 - [`AudioDeviceBroker.java`](frameworks/base/services/core/java/com/android/server/audio/AudioDeviceBroker.java) — 2357行，设备路由管理
 - [`AudioDeviceInventory.java`](frameworks/base/services/core/java/com/android/server/audio/AudioDeviceInventory.java) — ~2350行，设备连接状态管理
-- [`SoundDoseHelper.java`](frameworks/base/services/core/java/com/android/server/audio/SoundDoseHelper.java) — 1157行，CSD声剂量Java层
-- [`MelProcessor.cpp`](system/media/audio_utils/MelProcessor.cpp) — 414行，MEL计算Native层
-- [`MelAggregator.cpp`](system/media/audio_utils/MelAggregator.cpp) — 282行，CSD聚合Native层
+- （12L：安全音量在 `AudioService.java` 内实现，无独立 SoundDoseHelper 类）
+- （Android 14+ 的 `MelProcessor.cpp`/`MelAggregator.cpp` 不在本树，见13.6/13.7兼容入口）
 
 ---
 
@@ -28,10 +27,10 @@
 - [13.3 Focus+Device+Volume联合交互场景](13_13.3_Focus+Device+Volume联合交互场景.md) — 三者联动深度分析、音量随设备切换、Focus影响路由
 - [13.4 外部音频设备 — USB/HDMI/有线设备管理](13_13.4_外部音频设备-USBHDMI有线设备管理.md) — USB/HDMI设备路由、有线设备优先级、外部设备音量策略
 
-### CSD听力保护
-- [13.5 SoundDose与CSD声剂量管理](13_13.5_SoundDose与CSD声剂量管理.md) — IEC 62368-1标准、安全音量状态机、CSD双路径(Framework+HAL)、1X/5X警告分级
-- [13.6 MelProcessor — MEL计算引擎](13_13.6_MelProcessor-MEL计算引擎.md) — A-weighting IIR滤波器、process()算法、MelWorker异步回调、RS1/RS2瞬时检测
-- [13.7 MelAggregator — CSD聚合器](13_13.7_MelAggregator-CSD聚合器.md) — 多流MEL合并算法、CSD归一化计算、7天滚动窗口、跨重启恢复
+### CSD听力保护（Android 14+，兼容入口）
+- [13.5 SoundDose与CSD声剂量管理](13_13.5_SoundDose与CSD声剂量管理.md) — 兼容入口：Android 14+机制不在本树；12L安全音量等价能力对照
+- [13.6 MelProcessor — MEL计算引擎](13_13.6_MelProcessor-MEL计算引擎.md) — 兼容入口：Android 14+，不在本树
+- [13.7 MelAggregator — CSD聚合器](13_13.7_MelAggregator-CSD聚合器.md) — 兼容入口：Android 14+，不在本树
 
 ---
 
