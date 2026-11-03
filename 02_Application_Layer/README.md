@@ -4,7 +4,11 @@
 
 ---
 
-## 目录
+## 校准状态
+
+全部 14 篇已按本树源码（Android 12L + ExoPlayer 2.11.4）完成行号与事实校准（含 13+/14 机制的负结论标注）；ExoPlayer 相关以 external/exoplayer/tree（2.11.4）为准，OpenSL ES 以 frameworks/wilhelm 为准。
+
+## 篇目
 
 - [2.1 AudioTrack — 播放核心API深度解析](02_2.1_AudioTrack.md)
 - [2.2 AudioRecord — 录音核心API深度解析](02_2.2_AudioRecord.md)
