@@ -12,15 +12,15 @@
 
 配合 [9.2 CarAudioService](../09_AAOS_Car_Audio/09_9.2_CarAudioService-车载音频核心服务.md) 与 [9.5 音量组](../09_AAOS_Car_Audio/09_9.5_CarVolumeGroup-车载音量组.md) 理解调用来源；AudioPort gain 与 AudioControl mute/duck 不是同一接口。
 
-> 10.2–10.5 已按 12L 源码补版本边界与行号勘误（v2/v3 方法已标注"不在本树"）；10.8/10.9 为**兼容入口**（IAudioGainCallback/IModuleChangeCallback 不在本树，AIDL 仅 v1）。不能据此扩展本地 AIDL v1 能力；控制通知正常返回也不证明设备已完成衰减、静音或死亡恢复。
+> 10.2–10.5 已按 12L 源码全面校准（代码块为逐字摘录、行号锚点真实；v2/v3 方法已标注"不在本树"）；10.8/10.9 为**兼容入口**（IAudioGainCallback/IModuleChangeCallback 不在本树，AIDL 仅 v1）。不能据此扩展本地 AIDL v1 能力；控制通知正常返回也不证明设备已完成衰减、静音或死亡恢复。
 
 ## 完整目录（保留原文件入口）
 
 - [10.1 AudioControl HAL 总览](10_10.1_AudioControl_HAL总览.md) — 已按本地 v1 重写。
 - [10.2 核心接口](10_10.2_核心接口.md) — 已标注 v1 主线/v2/v3 版本边界。
 - [10.3 焦点回调流程](10_10.3_焦点回调流程.md) — 已按 12L wrapper 重写分发段（无 metadata 分支）。
-- [10.4 Ducking 机制](10_10.4_Ducking机制.md) — 待核对。
-- [10.5 Muting 机制](10_10.5_Muting机制.md) — 待核对。
+- [10.4 Ducking 机制](10_10.4_Ducking机制.md) — 已按 12L 校对（usage 域、CarDuckingInfo.generateDuckingInfo 自转、无 OEM Service）。
+- [10.5 Muting 机制](10_10.5_Muting机制.md) — 已按 12L 校对（getVolumeGroups、逐字摘录）。
 - [10.6 AudioControlWrapperAidl](10_10.6_AudioControlWrapperAidl-AIDL适配层架构.md) — 已按本地 wrapper 重写。
 - [10.7 HalAudioFocus](10_10.7_HalAudioFocus-外部焦点请求管理.md) — 已按本地请求表与清理流程重写。
 - [10.8 IAudioGainCallback — 兼容入口](10_10.8_IAudioGainCallback-HAL增益回调链路.md)（13+，本树无 gain 回调）。
