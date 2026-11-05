@@ -6,7 +6,7 @@
 
 ## 概述
 
-本篇深度解析AOSP14音频子系统中的**音量控制（Volume）**、**设备管理（Device）**和**听力保护（CSD）**三大核心机制，涵盖Java Framework层到Native C++层的完整技术链路。
+本篇深度解析 Android 12L 音频子系统（主线 12L/API 32 + SA8295 AudioReach）中的**音量控制（Volume）**、**设备管理（Device）**和**听力保护（CSD 兼容入口）**三大核心机制，涵盖Java Framework层到Native C++层的完整技术链路。
 
 **核心源码规模**：
 - [`AudioService.java`](frameworks/base/services/core/java/com/android/server/audio/AudioService.java) — 10861行（wc -l，12L），Volume/Device核心逻辑
