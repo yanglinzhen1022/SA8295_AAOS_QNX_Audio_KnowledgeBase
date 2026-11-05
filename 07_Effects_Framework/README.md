@@ -4,6 +4,14 @@
 
 ---
 
+## 状态说明
+
+本篇 12 篇文章已按本地 **Android 12L/API 32** 源码完成本轮逐篇核对与重校（行号、摘录与负结论均以本树为准）：
+
+- **版本边界**：Effect HAL 在 12L 仅 HIDL（libaudiohal/impl 无 AIDL 实现）；AIDL Effect HAL（`IFactory.aidl`/`IEffect.aidl` 硬件 HAL）与 `BundleTypes.h`、`NamedAllocRequest`、`onTransact` Binder 统计、checkPort 方向过滤等均为 Android 13+/14 机制，各文中以负结论标注。
+- **12L 实况**：FLOAT_EFFECT_CHAIN 本树已默认启用；Spatializer 头部追踪被硬编码关闭（`mSupportsHeadTracking = false`，Spatializer.cpp:221）。
+- 产品效果库与实现 UUID 见 7.9（msmnile_au `audio_effects.xml` 为准）。
+
 ## 目录
 
 - [7.1 AudioEffect架构总览](07_7.1_AudioEffect架构总览.md)
