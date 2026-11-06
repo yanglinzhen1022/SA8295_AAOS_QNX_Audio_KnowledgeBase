@@ -14,7 +14,7 @@
 | PVM | Primary Virtual Machine | 运行 QNX 的主虚拟机（Primary 域，DSP 唯一控制方） | 16 |
 | QNX | QNX Neutrino RTOS | 实时操作系统，掌管 ADSP | 16 |
 | ADSP | Audio DSP | 音频数字信号处理器 | 16 |
-| MM-HAB | Multimedia Hypervisor Advanced Bus | GVM↔PVM 跨 VM 音频通信通道 | 16 |
+| MM-HAB | （全称无出处，仅裸名 "MM HAB"，gsl_vm_msg.h:137 等） | GVM↔PVM 跨 VM 音频通信通道 | 16 |
 | Hypervisor | — | 虚拟化管理层，隔离 GVM/PVM | 01/16 |
 
 ## 二、Android 音频框架
@@ -60,7 +60,9 @@
 | SessionGsl | — | 历史遗留（`.cpp` 已移除），实际不走此分支 | 15/16 |
 | CAPIv2 | Common Audio Processing Interface v2 | DSP 侧编解码/处理接口 | 15 |
 | CASA | — | 高通校准配置工具 | 15 |
-| APR | Asynchronous Packet Router | QNX 侧异步包路由协议库 | 16 |
+| APR | Asynchronous Packet Router（audio_elite/inc_stubs/diagcmd.h:609） | **Elite 遗留**兼容条目；AR 主线 IPC 为 GPR | 16 |
+| GPR | Generic Packet Router | AudioReach 主线跨域 IPC（QNX audio_service/gsl 使用） | 16/18 |
+| CSD2 | — | QNX 侧通信服务（ACDB 校准下发等，audio_ar/audio_driver/csd2） | 16 |
 
 ## 五、蓝牙音频
 
