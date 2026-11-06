@@ -68,4 +68,16 @@ ch05 循环收口判定：rev05f 复核 a61a862 全部 P0/P1 修复正确、无�
 | **20 端到端场景** | 5 文+README | 四场景（多音区并发/语音录音/蓝牙通话/异常恢复），全部回链既有已核验章节，仅新增 common_au/car_audio_configuration.xml 的产品锚点（zone0 四音量组 :34-63、输入 Bus :65/:98/:124 等，已逐行验证） |
 | **21 版本演进** | 1 文+README | 全库 118 处版本边界的汇总台账（30+ 项，逐项回链出处章）；证据分级 A/B/C 声明“未对照 AOSP 13/14 源码复核”；迁移提示明确标注未验证 |
 
-同步更新：顶层 README（章节目录/学习顺序/去重矩阵）、CLASS_INDEX（内核层+场景/版本条目）、01.1.5（techpack 路径行）。集成文件（README/CLASS_INDEX/01.1.5）的改动均在增补提交内自检（fw-checker 0 failures、链接 0 broken）。写作过程中的自检修正（先行于独立评审）：gvmauto.conf 摘录行号/开关数（:4-19、14 个）、QUIN_GVM 片段归属（autogvm_GKI.config:1 而非 autogvm_QGKI.config:61）、routing-auto/platform_init_auto 选择条件（findstring QUIN_GVM/PLATFORM_AUTO 而非 SND_SOC_AUTO）、auto init 差异（voice/voip 而非 slim）、19.3 sa8155 摘录补全 custom 条目、21.1 出处回链 8 处改指、audio_ar 打包清单补 libautohal_pal。本表待独立评审闭环后补充最终判定。
+同步更新：顶层 README（章节目录/学习顺序/去重矩阵）、CLASS_INDEX（内核层+场景/版本条目）、01.1.5（techpack 路径行）。集成文件（README/CLASS_INDEX/01.1.5）的改动均在增补提交内自检（fw-checker 0 failures、链接 0 broken）。写作过程中的自检修正（先行于独立评审）：gvmauto.conf 摘录行号/开关数（:4-19、14 个）、QUIN_GVM 片段归属（autogvm_GKI.config:1 而非 autogvm_QGKI.config:61）、routing-auto/platform_init_auto 选择条件（findstring QUIN_GVM/PLATFORM_AUTO 而非 SND_SOC_AUTO）、auto init 差异（voice/voip 而非 slim）、19.3 sa8155 摘录补全 custom 条目、21.1 出处回链 8 处改指、audio_ar 打包清单补 libautohal_pal。本表独立评审闭环已于同日完成，记录见下。
+
+### 评审闭环记录（2026-11-06，分支 docs/kernel-e2e-evolution）
+
+**第一轮（独立评审，全 BLOCK）**：3 位 fresh-context reviewer 逐章对照源码——k19（3×P0 + 4×P1 + 11×P2，核心：19.6 虚构库名 libsndcarddefs 与“卡定义不在树/路由不可静态证明”负结论，实为 libsndcardparser 在树且 card-defs.xml 双分支接线链完整）；k20（2×P0 + 5×P1 + 13×P2，核心：虚构 PAL_STREAM_VOICE_RECOGNITION 与 commute 设备分类、焦点矩阵执行者与 duck 执行层归因错误）；k21（10×P1 + 10×P2，均在 21.1 版本列与出处回链）。作者对每条发现先直接源码 grep 复核（全部属实）后修复。
+
+**修复提交 `4d370ec`**（18 文件，+250/−147）：19.6 全重写（libsndcardparser/card-defs 双分支接线链）、19.1–19.5 锚点与边界联动修正、20.2 焦点重写、20.3/20.4 删虚构常量、21.1 全部版本列修正、集成文件同步。
+
+**第二轮（delta 复审，全部完成）**：d19fix **PASS with notes**（原 3×P0+4×P1+11×P2 全部 FIXED 且经独立源码复核；新发现仅 4×P2 纳米级锄误）；d20fix **PASS with notes**（原 2×P0+5×P1+13×P2 全部 FIXED；新发现 1×P1：20.2 重写引入的“每 Track duck 仅在 App 收到 CAN_DUCK 时触发”条件句与源码相反，及 1×P2 锚点错接）；d21fix **PASS**（原 10×P1+10×P2 全部 FIXED，8 处新论断全部独立核验属实，零新发现）。
+
+**收尾提交 `ccf51a5`**（6 文件，12 行）：20.2 §3/§6 按复审员处方改写（入口 = FocusRequester.handleFocusLoss，框架 duck 成功时 App 反而收不到回调；AAOS 派发走 dispatchFocusChange 直达 App 不经 duckPlayers）；其余为锄误级锄点/计数修正（19.6 mermaid 19 模块、Android.mk:4、card-defs-dummy 精确描述、19.2 codecs Kbuild :89-116、19.1 WSA 表述加限定、19.5 端点统一、13_13.4 Engine.cpp 锚点归还）。收尾提交的全部引用锚点均经作者直接源码复核（CarAudioFocus.java:138-140、MediaFocusControl.java:766-786、FocusRequester.java:397/:400-410/:487-515、agm/snd_parser/Android.mk:4/:6/:10、dsp/Kbuild:153-168、dsp/codecs/Kbuild:89-116、EngineBase.cpp:70、AudioPolicyManager.cpp:100-140、enginedefault Engine.cpp:346-356、direwolf-vm-audio.dtsi:1251/:1261）。
+
+**最终状态**：三轮独立评审（初评→修复→delta 复审）+ 收尾锄误全部闭环；静态检查 fw-doc-check 21 文件/380 链接/0 失败 + staged gate 通过；剩余未验证项（实机启动属性、HAL/DSP 实际压低效果、mmdc 渲染、构建）均在文中以边界声明标注。
