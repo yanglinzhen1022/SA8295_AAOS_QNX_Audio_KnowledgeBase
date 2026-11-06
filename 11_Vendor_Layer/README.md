@@ -14,7 +14,7 @@ Vendor Layer是OEM定制AAOS音频系统的核心层，涵盖6大XML配置文件
 - [11.1 配置文件体系总览](11_11.1_配置文件体系总览.md) — XML配置文件体系（政策/音量/引擎/车载/音效）角色、关系、依赖
 - [11.2 audio_policy_configuration.xml — 核心配置](11_11.2_audio_policy_configuration.xml-核心配置.md) — module/mixPort/devicePort/route详解
 - [11.3 audio_policy_volumes.xml — 音量曲线](11_11.3_audio_policy_volumes.xml-音量曲线.md) — volume（ref 引用）/point 段点/设备类别曲线
-- [11.4 audio_policy_engine_configuration.xml — 策略引擎配置](11_11.4_audio_policy_engine_configuration.xml-策略引擎配置.md) — ProductStrategy/VolumeGroup/焦点交互
+- [11.4 audio_policy_engine_configuration.xml — 策略引擎配置](11_11.4_audio_policy_engine_configuration.xml-策略引擎配置.md) — ProductStrategy/VolumeGroup（焦点交互在 Framework 侧 FocusInteraction.java，见 12.6）
 - [11.5 car_audio_configuration.xml — AAOS车载配置](11_11.5_car_audio_configuration.xml-AAOS车载配置.md) — Zone/VolumeGroup/Context/Bus映射
 
 ### 解析与定制
