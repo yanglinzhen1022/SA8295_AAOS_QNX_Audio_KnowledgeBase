@@ -11,9 +11,9 @@ Vendor Layer是OEM定制AAOS音频系统的核心层，涵盖6大XML配置文件
 ## 目录
 
 ### 配置文件体系
-- [11.1 配置文件体系总览](11_11.1_配置文件体系总览.md) — 6大XML配置文件角色、关系、依赖
+- [11.1 配置文件体系总览](11_11.1_配置文件体系总览.md) — XML配置文件体系（政策/音量/引擎/车载/音效）角色、关系、依赖
 - [11.2 audio_policy_configuration.xml — 核心配置](11_11.2_audio_policy_configuration.xml-核心配置.md) — module/mixPort/devicePort/route详解
-- [11.3 audio_policy_volumes.xml — 音量曲线](11_11.3_audio_policy_volumes.xml-音量曲线.md) — volume/ref段点/设备类别曲线
+- [11.3 audio_policy_volumes.xml — 音量曲线](11_11.3_audio_policy_volumes.xml-音量曲线.md) — volume（ref 引用）/point 段点/设备类别曲线
 - [11.4 audio_policy_engine_configuration.xml — 策略引擎配置](11_11.4_audio_policy_engine_configuration.xml-策略引擎配置.md) — ProductStrategy/VolumeGroup/焦点交互
 - [11.5 car_audio_configuration.xml — AAOS车载配置](11_11.5_car_audio_configuration.xml-AAOS车载配置.md) — Zone/VolumeGroup/Context/Bus映射
 
@@ -24,8 +24,8 @@ Vendor Layer是OEM定制AAOS音频系统的核心层，涵盖6大XML配置文件
 - [11.9 car_audio_configuration.xml 深度解析](11_11.9_car_audio_configuration.xml_深度解析.md) — CarAudioContext/Duck策略/v3 zoneConfigs
 
 ### 定制矩阵与HAL
-- [11.10 OEM定制点完整矩阵](11_11.10_OEM定制点完整矩阵.md) — 6大配置+HAL+Framework全部定制点
-- [11.11 AIDL/HIDL Vendor HAL实现架构](11_11.11_AIDLHIDL_Vendor_HAL实现架构.md) — IModule 30+方法/Vendor扩展/编译配置
+- [11.10 OEM定制点完整矩阵](11_11.10_OEM定制点完整矩阵.md) — 配置（政策/音量/引擎/车载/音效/mixer paths）+HAL+Framework定制点
+- [11.11 AIDL/HIDL Vendor HAL实现架构](11_11.11_AIDLHIDL_Vendor_HAL实现架构.md) — HIDL IDevice/IStreamOut 方法表/AIDL 演进对照/编译配置
 
 ---
 
