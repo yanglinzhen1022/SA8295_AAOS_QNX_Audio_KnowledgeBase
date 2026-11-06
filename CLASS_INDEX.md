@@ -2,7 +2,7 @@
 
 > 对照源码阅读时，从核心类/接口名快速定位讲解所在章。按层分组，`章节` 列指主要讲解章。[← 返回总目录](README.md) ｜ 目录级速查见 [01.5 关键源码目录速查](01_Architecture_Overview/01_1.5_关键源码目录速查.md)
 
-> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。全库 18 章正文均已按本地源码重写并经独立评审闭环（记录见 [docs/superpowers/reports/2026-11-05-final-completion-report.md](docs/superpowers/reports/2026-11-05-final-completion-report.md)）；带直达链接的条目可跳转讲解文章，其余为章号引用。标注 13+/14+ 的机制为树外版本内容，不代表本地均有实现。
+> **范围提示：** 本地主线为 Android 12L + SA8295 AudioReach。全库 21 章正文均已按本地源码重写并经独立评审闭环（记录见 [docs/superpowers/reports/2026-11-05-final-completion-report.md](docs/superpowers/reports/2026-11-05-final-completion-report.md)）；带直达链接的条目可跳转讲解文章，其余为章号引用。标注 13+/14+ 的机制为树外版本内容，不代表本地均有实现。
 
 ---
 
@@ -125,3 +125,20 @@
 | ACDB / graph_init / acdb_init / gsl_add_database | [16.6 图与校准查询](16_Vendor_QNX_Architecture/16_16.6_ACDB校准体系.md)、[16.7 双域数据库](16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md)；不以 legacy acdb-loader 代表 AR 主链 |
 | auto-audiod / AutoPower / Silent Boot / audio-chime | 16 |
 | audio_service_vm / ams_lib / apr_lib / audio_dac / audio_expander | 16 |
+
+## Android 内核（19）
+
+| 类 / 驱动 | 章节 |
+|-----------|------|
+| sa8155 / gvm_auto_spf_dummy（machine） | [19.3 ASoC 声卡注册](19_Kernel_Audio/19_19.3_ASoC声卡注册.md) |
+| msm-pcm-q6-v2 / msm-compress-q6-v2 / msm-dai-q6-v2 / msm-pcm-routing-auto | [19.4 FE 与 Platform 驱动](19_Kernel_Audio/19_19.4_FE与Platform驱动.md) |
+| q6adm / q6afe / q6asm / q6core / rtac / msm_audio_ion_vm | [19.5 QDSP6 客户端与 APR VM](19_Kernel_Audio/19_19.5_QDSP6客户端与APR_VM传输.md) |
+| apr_vm / apr_v2（APR over HAB MM_AUD_1/2） | [19.5](19_Kernel_Audio/19_19.5_QDSP6客户端与APR_VM传输.md)；QNX 侧同通道见 [18.2](18_AGM_GSL_Architecture/18_18.2_GSL跨VM控制与缓冲区.md) |
+| snd_utils / pcm_plugin / agm_pcm_plugin（tinyalsa 插件分发） | [19.6 用户态消费与插件分发](19_Kernel_Audio/19_19.6_用户态消费与插件分发.md)、[15.12](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) |
+
+## 场景与版本（20–21）
+
+| 条目 | 章节 |
+|------|------|
+| 多音区并发 / 语音录音 / 蓝牙通话 / 异常恢复（场景链路） | [20 篇](20_End_to_End_Scenarios/README.md) |
+| 12L ↔ 13+/14+ 版本边界台账与迁移提示 | [21.1 版本边界总表](21_Android_Version_Evolution/21_21.1_版本边界总表与迁移提示.md) |

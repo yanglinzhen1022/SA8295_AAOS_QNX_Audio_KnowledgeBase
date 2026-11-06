@@ -58,15 +58,15 @@ PAL 资源与配置专题：[15.6 ResourceManager](15_PAL_Architecture/15_15.6_R
 
 ### 第二阶段：跨过标准接口进入平台实现
 
-**08 → 15 → 18 → 16**
+**08 → 15 → 18 → 16 → 19**
 
-先读上列 HAL-PAL 文章，区分 HIDL/C HAL/PAL 边界，再深入 PAL 内部、AGM/GSL 和 QNX。控制调用、共享缓冲区、PCM API 与跨 VM 消息需要分别追踪，不能用一条粗箭头替代。
+先读上列 HAL-PAL 文章，区分 HIDL/C HAL/PAL 边界，再深入 PAL 内部、AGM/GSL 和 QNX，最后到 19 篇补上 Android 内核侧（FE 声卡与 APR-VM）。控制调用、共享缓冲区、PCM API 与跨 VM 消息需要分别追踪，不能用一条粗箭头替代。
 
 ### 第三阶段：理解 AAOS 与跨层主题
 
-**09 → 10 → 11，再按问题读 12 / 13 / 14**
+**09 → 10 → 11，再按问题读 12 / 13 / 14 → 20**
 
-把 CarAudioService、多区域、AudioControl、平台配置与焦点/音量/设备联系起来。核心 Audio HAL 与 AudioControl HAL 是不同接口，不要仅凭其中一者的 HIDL/AIDL 版本推断另一者。
+把 CarAudioService、多区域、AudioControl、平台配置与焦点/音量/设备联系起来，再用 20 篇场景专题把各层按真实场景串起来。核心 Audio HAL 与 AudioControl HAL 是不同接口，不要仅凭其中一者的 HIDL/AIDL 版本推断另一者。升级评估时读 21 篇的版本边界台账。
 
 ### 第四阶段：按现象回到各层
 
@@ -98,6 +98,9 @@ PAL 资源与配置专题：[15.6 ResourceManager](15_PAL_Architecture/15_15.6_R
 | [16 Vendor + QNX](16_Vendor_QNX_Architecture/) | 平台与跨域实现 | 16.6/16.7 校准、16.11/16.12 平台接口、16.16–16.19 后端/服务/GPR 与兼容入口已调整；其余原文待核对 |
 | [17 调试与 OEM 指南](17_Debug_and_OEM_Guide/) | 问题定位 | 用各层状态、日志和工具验证假设 |
 | [18 AGM / GSL](18_AGM_GSL_Architecture/) | 图管理 | 18.1 AGM、18.2 GSL VM、18.3 宿主图/GPR/数据路径；前端、RTC/动态模块及底层传输仍有边界 |
+| [19 Android 内核音频](19_Kernel_Audio/) | 内核层 | techpack/audio 构建、ASoC 声卡、FE/Platform、QDSP6 客户端与 APR-VM（HAB）、tinyalsa 插件分发；DT 与卡定义不在树的边界 |
+| [20 端到端场景](20_End_to_End_Scenarios/) | 跨层综合 | 多音区并发、语音录音、蓝牙通话、异常恢复四场景，逐步回链各层 |
+| [21 版本演进](21_Android_Version_Evolution/) | 版本对照 | 12L 本树与 13+/14+ 机制的逐项边界台账与迁移阅读提示 |
 
 ## 本地主线的几个必要边界
 
@@ -130,6 +133,8 @@ PAL 资源与配置专题：[15.6 ResourceManager](15_PAL_Architecture/15_15.6_R
 | GSL 图与 DSP 命令 | [18.3](18_AGM_GSL_Architecture/18_18.3_GSL图生命周期与DSP命令.md) | handle/GKV/共享 SG、状态与应答、data mode 与 buffer 所有权 |
 | QNX 服务与底层报文 | [16.17](16_Vendor_QNX_Architecture/16_16.17_QNX_audio_service_vm_VM音频服务.md) / [16.19](16_Vendor_QNX_Architecture/16_16.19_QNX_apr_lib_APR协议库.md) | 并行初始化、resource manager、GPR/GLink、packet 所有权 |
 | Android + QNX 平台全景 | [16.12](16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md) | 执行域、构建/启动边界与不能由静态代码推导的结论 |
-| 新版本机制 | 现存专题作为候选材料，后续独立整理 | 需有对应版本来源后再与本地主线比较 |
+| 内核音频通路（Guest VM） | [19.1](19_Kernel_Audio/19_19.1_内核音频通路总览.md) | 19.2–19.6：模块清单、声卡注册、FE/Platform、APR-VM HAB、tinyalsa 插件分发 |
+| 端到端场景 | [20.1](20_End_to_End_Scenarios/20_20.1_场景阅读指南与全链路全景.md) | 20.2–20.5：并发播放/录音仲裁/蓝牙通话/异常恢复；不引入新机制，逐步回链各层 |
+| 新版本机制与版本边界 | [21.1](21_Android_Version_Evolution/21_21.1_版本边界总表与迁移提示.md) / [01.1.7](01_Architecture_Overview/01_1.7_AOSP14_Audio新特性架构演进.md) | 逐机制台账（12L 证据 ↔ 13+/14+ 归属与出处）；特性讲解在 01.1.7 |
 
-后续继续深化 AGM/GSL，并在具备实质内容时补充 Kernel Audio、端到端场景和 Android 版本演进专题；不生成空目录，也不把设计/实施记录放进学习主线。
+后续继续深化 AGM/GSL。Kernel Audio（19 篇）、端到端场景（20 篇）和 Android 版本演进（21 篇）已建成；仍坚持不为未核验主题生成占位章节，不把设计/实施记录放进学习主线。

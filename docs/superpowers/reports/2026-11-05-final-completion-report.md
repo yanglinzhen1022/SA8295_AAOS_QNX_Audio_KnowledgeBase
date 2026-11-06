@@ -42,7 +42,7 @@ ch05 循环收口判定：rev05f 复核 a61a862 全部 P0/P1 修复正确、无�
 
 ## 4. 最终验证状态（全部通过，静态）
 
-- **fw-checker 全 18 章**：0 failures（合计 259 文件、~4700 链接、~2100 行号锚点、~4800 fence；UTF-8/U+FFFD/fence 配对/lineref 标识符规则全过）。
+- **fw-checker 全 18 章**（增补 19–21 章后为 21 章，见 §7）：0 failures（合计 259 文件、~4700 链接、~2100 行号锚点、~4800 fence；UTF-8/U+FFFD/fence 配对/lineref 标识符规则全过）。
 - **主题 checker ×11**（aaos/agm/audiod/calibration/focus/gsl-graph/gsl-vm/hal-pal/native/pal-resource/qnx-service-gpr）：0 failures。
 - **staged gate**（UTF-8、替换字符、fence 配对、本地链接目标、暂存=工作区、`git diff --check`）：通过；工作区干净。
 
@@ -57,3 +57,15 @@ ch05 循环收口判定：rev05f 复核 a61a862 全部 P0/P1 修复正确、无�
 
 - LLM API 账户：`yanglinzhen.3`（JoyCode SaaS，本地 LiteLLM 代理）；模型 GLM-5.3-jcloud（上下文 200000）。
 - 累计 token（不含缓存）：≈24.7M。
+
+## 7. 增补（2026-11-06）：补建设计规格 §4.1 的 19/20/21 章
+
+终报原以“18 章完成”收口；设计规格 §4.1 信息架构表中规划但未建的三个专题于本次增补完成（分支 `docs/kernel-e2e-evolution`，从 master `1c4b87a` 切出）：
+
+| 章 | 文件 | 内容与边界 |
+|---|---|---|
+| **19 Android 内核音频** | 6 文+README | techpack/audio 构建链（gvmauto.conf :4-19 在树 vs sa8295gvmauto.conf 未接线双入口）、ASoC 声卡（sa8155.c :10668-1076 与未打包的 dummy 变体）、FE/Platform 对象组、APR-VM 走 HAB MM_AUD_1/2（apr_vm.c :1364-1377，与 QNX gsl_be 同通道命名空间）、tinyalsa HW/插件分发；诚实边界：产品 DT 不在树、libsndcarddefs 不在树（PCM 路由不可静态断言）、audio_*.ko 改名映射文件未定位 |
+| **20 端到端场景** | 5 文+README | 四场景（多音区并发/语音录音/蓝牙通话/异常恢复），全部回链既有已核验章节，仅新增 common_au/car_audio_configuration.xml 的产品锚点（zone0 四音量组 :34-63、输入 Bus :65/:98/:124 等，已逐行验证） |
+| **21 版本演进** | 1 文+README | 全库 118 处版本边界的汇总台账（30+ 项，逐项回链出处章）；证据分级 A/B/C 声明“未对照 AOSP 13/14 源码复核”；迁移提示明确标注未验证 |
+
+同步更新：顶层 README（章节目录/学习顺序/去重矩阵）、CLASS_INDEX（内核层+场景/版本条目）、01.1.5（techpack 路径行）。集成文件（README/CLASS_INDEX/01.1.5）的改动均在增补提交内自检（fw-checker 0 failures、链接 0 broken）。写作过程中的自检修正（先行于独立评审）：gvmauto.conf 摘录行号/开关数（:4-19、14 个）、QUIN_GVM 片段归属（autogvm_GKI.config:1 而非 autogvm_QGKI.config:61）、routing-auto/platform_init_auto 选择条件（findstring QUIN_GVM/PLATFORM_AUTO 而非 SND_SOC_AUTO）、auto init 差异（voice/voip 而非 slim）、19.3 sa8155 摘录补全 custom 条目、21.1 出处回链 8 处改指、audio_ar 打包清单补 libautohal_pal。本表待独立评审闭环后补充最终判定。
