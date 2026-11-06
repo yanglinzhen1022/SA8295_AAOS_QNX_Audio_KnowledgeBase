@@ -98,7 +98,7 @@ PAL 资源与配置专题：[15.6 ResourceManager](15_PAL_Architecture/15_15.6_R
 | [16 Vendor + QNX](16_Vendor_QNX_Architecture/) | 平台与跨域实现 | 16.6/16.7 校准、16.11/16.12 平台接口、16.16–16.19 后端/服务/GPR 与兼容入口已调整；其余原文待核对 |
 | [17 调试与 OEM 指南](17_Debug_and_OEM_Guide/) | 问题定位 | 用各层状态、日志和工具验证假设 |
 | [18 AGM / GSL](18_AGM_GSL_Architecture/) | 图管理 | 18.1 AGM、18.2 GSL VM、18.3 宿主图/GPR/数据路径；前端、RTC/动态模块及底层传输仍有边界 |
-| [19 Android 内核音频](19_Kernel_Audio/) | 内核层 | techpack/audio 构建、ASoC 声卡、FE/Platform、QDSP6 客户端与 APR-VM（HAB）、tinyalsa 插件分发；DT 与卡定义不在树的边界 |
+| [19 Android 内核音频](19_Kernel_Audio/) | 内核层 | techpack/audio 构建、ASoC 声卡、FE/Platform、QDSP6 客户端与 APR-VM（HAB）、tinyalsa 插件分发；Elite/AR 启动双分支与 AR 主线全插件路由的静态证明链 |
 | [20 端到端场景](20_End_to_End_Scenarios/) | 跨层综合 | 多音区并发、语音录音、蓝牙通话、异常恢复四场景，逐步回链各层 |
 | [21 版本演进](21_Android_Version_Evolution/) | 版本对照 | 12L 本树与 13+/14+ 机制的逐项边界台账与迁移阅读提示 |
 

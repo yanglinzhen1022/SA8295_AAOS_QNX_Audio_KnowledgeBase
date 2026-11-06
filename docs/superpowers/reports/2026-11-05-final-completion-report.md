@@ -64,7 +64,7 @@ ch05 循环收口判定：rev05f 复核 a61a862 全部 P0/P1 修复正确、无�
 
 | 章 | 文件 | 内容与边界 |
 |---|---|---|
-| **19 Android 内核音频** | 6 文+README | techpack/audio 构建链（gvmauto.conf :4-19 在树 vs sa8295gvmauto.conf 未接线双入口）、ASoC 声卡（sa8155.c :10668-1076 与未打包的 dummy 变体）、FE/Platform 对象组、APR-VM 走 HAB MM_AUD_1/2（apr_vm.c :1364-1377，与 QNX gsl_be 同通道命名空间）、tinyalsa HW/插件分发；诚实边界：产品 DT 不在树、libsndcarddefs 不在树（PCM 路由不可静态断言）、audio_*.ko 改名映射文件未定位 |
+| **19 Android 内核音频** | 6 文+README | techpack/audio 构建链（gvmauto.conf :4-19 在树 vs sa8295gvmauto.conf 未接线双入口）、ASoC 声卡（sa8155.c :10668-10676 与 AR 分支加载的 dummy 变体；DT 双节点在树 direwolf-vm-audio.dtsi）、FE/Platform 对象组、APR-VM 走 HAB MM_AUD_1/2（apr_vm.c :1366-1379，Elite 分支路径）、Elite/AR 启动双分支（init.target.rc :36-45）；AR 主线 PCM 全插件路由静态可证（card-defs.xml card 100 全 PLUGIN + PAL SND_CARD_VIRTUAL 100）；诚实边界：实机启动属性取值不可静态证明、audio_*.ko 改名映射文件未定位 |
 | **20 端到端场景** | 5 文+README | 四场景（多音区并发/语音录音/蓝牙通话/异常恢复），全部回链既有已核验章节，仅新增 common_au/car_audio_configuration.xml 的产品锚点（zone0 四音量组 :34-63、输入 Bus :65/:98/:124 等，已逐行验证） |
 | **21 版本演进** | 1 文+README | 全库 118 处版本边界的汇总台账（30+ 项，逐项回链出处章）；证据分级 A/B/C 声明“未对照 AOSP 13/14 源码复核”；迁移提示明确标注未验证 |
 
