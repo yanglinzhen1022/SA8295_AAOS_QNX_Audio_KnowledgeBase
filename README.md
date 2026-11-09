@@ -40,7 +40,7 @@
 
 先理解应用创建什么、Framework 管什么、AudioFlinger 怎样处理数据、Policy 怎样选择路由，以及效果处理放在哪里。策略、焦点和音量是控制关系，不能都画成串联的 PCM 搬运层。
 
-关键篇目：[5.1 AudioFlinger 职责与对象](05_AudioFlinger/05_5.1_AudioFlinger-音频数据面引擎.md) · [4.4 共享内存协议](04_Native_Framework_Layer/04_4.4_共享内存机制深度解析.md) · [5.9 播放全栈调用链](05_AudioFlinger/05_5.9_音乐播放全栈调用链.md) · [5.10 录音全栈调用链](05_AudioFlinger/05_5.10_录音全栈调用链.md) · [6.1/6.2 策略入口](06_Audio_Policy_Engine/06_6.1_AudioPolicyService-控制面入口.md)
+关键篇目：[5.1 AudioFlinger 职责与对象](05_AudioFlinger/05_5.1_AudioFlinger-音频数据面引擎.md) · [4.4 共享内存协议](04_Native_Framework_Layer/04_4.4_共享内存机制深度解析.md) · [5.9 播放全栈调用链](05_AudioFlinger/05_5.9_音乐播放全栈调用链.md) · [5.10 录音全栈调用链](05_AudioFlinger/05_5.10_录音全栈调用链.md) · [6.1 APS 入口](06_Audio_Policy_Engine/06_6.1_AudioPolicyService-控制面入口.md) · [6.2 APM 核心](06_Audio_Policy_Engine/06_6.2_AudioPolicyManager-策略核心实现.md)
 
 ### 第二阶段：跨过标准接口进入平台实现
 
@@ -48,7 +48,7 @@
 
 先跨过 HAL 标准边界（08 与 15.10），区分 HIDL/C HAL/PAL 边界，再深入 PAL 内部、AGM/GSL 和 QNX，最后到 18 篇补上 Android 内核侧（FE 声卡与 APR-VM）。控制调用、共享缓冲区、PCM API 与跨 VM 消息需要分别追踪，不能用一条粗箭头替代。
 
-关键篇目：[8.1 HAL 双轨边界](08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md) · [15.10 HAL-PAL 适配层](15_PAL_Architecture/15_15.10_HAL-PAL适配层架构.md) · [15.12 tinyalsa→AGM 桥](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) · [17.1 AGM 会话与音频图](17_AGM_GSL_Architecture/17_17.1_AGM会话与音频图.md) · [17.2 GSL 跨 VM 控制](17_AGM_GSL_Architecture/17_17.2_GSL跨VM控制与缓冲区.md) · [16.12 双域全景](16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md) · [18.1 内核通路总览](18_Kernel_Audio/18_18.1_内核音频通路总览.md)
+关键篇目：[8.1 HAL 边界](08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md) · [15.10 HAL-PAL 适配层](15_PAL_Architecture/15_15.10_HAL-PAL适配层架构.md) · [15.12 tinyalsa→AGM 桥](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) · [17.1 AGM 会话与音频图](17_AGM_GSL_Architecture/17_17.1_AGM会话与音频图.md) · [17.2 GSL 跨 VM 控制](17_AGM_GSL_Architecture/17_17.2_GSL跨VM控制与缓冲区.md) · [16.12 双域全景](16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md) · [18.1 内核通路总览](18_Kernel_Audio/18_18.1_内核音频通路总览.md)
 
 专题：[16.6 ACDB 校准体系](16_Vendor_QNX_Architecture/16_16.6_ACDB校准体系.md) · [17.3 GSL 图生命周期](17_AGM_GSL_Architecture/17_17.3_GSL图生命周期与DSP命令.md) · [16.17 QNX audio_service](16_Vendor_QNX_Architecture/16_16.17_QNX_audio_service_vm_VM音频服务.md) · 随读随查 [15.99 Stream/Session/Device 映射](15_PAL_Architecture/15_15.99_附录_Stream-Session-Device映射关系.md)
 
