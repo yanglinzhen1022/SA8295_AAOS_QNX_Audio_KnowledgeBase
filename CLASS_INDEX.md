@@ -117,9 +117,9 @@
 | SNDPARSER / USECASE_XML_FILE / RM getVendorConfigPath | [15.9 配置消费者与选择路径](15_PAL_Architecture/15_15.9_配置文件列表.md) |
 | ContextManager / SndCardMonitor | 15 |
 | tinyalsa pcm_ops / pcm_plugin_ops / AGM PCM 与 mixer 插件 | [15.12 操作分派与计量](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) |
-| AGM / session_obj / aif / graph_obj / device_obj | [18.1 metadata、会话与图生命周期](18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md) |
-| gsl_graph / gsl_graph_gkv_node / gsl_subgraph / gsl_data_path_info | [18.3 宿主图、GPR 与数据完成](18_AGM_GSL_Architecture/18_18.3_GSL图生命周期与DSP命令.md)、[16.11 PAL Session 与 GSL API](16_Vendor_QNX_Architecture/16_16.11_SessionGsl与GSL接口.md) |
-| GSL / gsl_fe / gsl_vm_be / gsl_be_session | [18.2 控制与缓冲区](18_AGM_GSL_Architecture/18_18.2_GSL跨VM控制与缓冲区.md)、[16.12 双域全景](16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md)；[16.7 VM INIT 与追加数据库](16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md) |
+| AGM / session_obj / aif / graph_obj / device_obj | [17.1 metadata、会话与图生命周期](17_AGM_GSL_Architecture/17_17.1_AGM会话与音频图.md) |
+| gsl_graph / gsl_graph_gkv_node / gsl_subgraph / gsl_data_path_info | [17.3 宿主图、GPR 与数据完成](17_AGM_GSL_Architecture/17_17.3_GSL图生命周期与DSP命令.md)、[16.11 PAL Session 与 GSL API](16_Vendor_QNX_Architecture/16_16.11_SessionGsl与GSL接口.md) |
+| GSL / gsl_fe / gsl_vm_be / gsl_be_session | [17.2 控制与缓冲区](17_AGM_GSL_Architecture/17_17.2_GSL跨VM控制与缓冲区.md)、[16.12 双域全景](16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md)；[16.7 VM INIT 与追加数据库](16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md) |
 | audio_service / sysctrl / pil_thread_adsp / fastrpc_be_thread | [16.17 AR 服务并行初始化与资源管理器](16_Vendor_QNX_Architecture/16_16.17_QNX_audio_service_vm_VM音频服务.md)、[16.16 后端边界](16_Vendor_QNX_Architecture/16_16.16_QNX_audio_driver_vm_VM音频驱动层.md) |
 | GPR / gpr_local_send / gpr_ipc_receive / GLink | [16.19 域路由、端口回调、连接与报文所有权](16_Vendor_QNX_Architecture/16_16.19_QNX_apr_lib_APR协议库.md) |
 | ACDB / graph_init / acdb_init / gsl_add_database | [16.6 图与校准查询](16_Vendor_QNX_Architecture/16_16.6_ACDB校准体系.md)、[16.7 双域数据库](16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md)；不以 legacy acdb-loader 代表 AR 主链 |
@@ -130,15 +130,15 @@
 
 | 类 / 驱动 | 章节 |
 |-----------|------|
-| sa8155 / gvm_auto_spf_dummy（machine） | [19.3 ASoC 声卡注册](19_Kernel_Audio/19_19.3_ASoC声卡注册.md) |
-| msm-pcm-q6-v2 / msm-compress-q6-v2 / msm-dai-q6-v2 / msm-pcm-routing-auto | [19.4 FE 与 Platform 驱动](19_Kernel_Audio/19_19.4_FE与Platform驱动.md) |
-| q6adm / q6afe / q6asm / q6core / rtac / msm_audio_ion_vm | [19.5 QDSP6 客户端与 APR VM](19_Kernel_Audio/19_19.5_QDSP6客户端与APR_VM传输.md) |
-| apr_vm / apr_v2（APR over HAB MM_AUD_1/2） | [19.5](19_Kernel_Audio/19_19.5_QDSP6客户端与APR_VM传输.md)；QNX 侧同通道见 [18.2](18_AGM_GSL_Architecture/18_18.2_GSL跨VM控制与缓冲区.md) |
-| snd_utils / pcm_plugin / agm_pcm_plugin（tinyalsa 插件分发） | [19.6 用户态消费与插件分发](19_Kernel_Audio/19_19.6_用户态消费与插件分发.md)、[15.12](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) |
+| sa8155 / gvm_auto_spf_dummy（machine） | [18.3 ASoC 声卡注册](18_Kernel_Audio/18_18.3_ASoC声卡注册.md) |
+| msm-pcm-q6-v2 / msm-compress-q6-v2 / msm-dai-q6-v2 / msm-pcm-routing-auto | [18.4 FE 与 Platform 驱动](18_Kernel_Audio/18_18.4_FE与Platform驱动.md) |
+| q6adm / q6afe / q6asm / q6core / rtac / msm_audio_ion_vm | [18.5 QDSP6 客户端与 APR VM](18_Kernel_Audio/18_18.5_QDSP6客户端与APR_VM传输.md) |
+| apr_vm / apr_v2（APR over HAB MM_AUD_1/2） | [18.5](18_Kernel_Audio/18_18.5_QDSP6客户端与APR_VM传输.md)；QNX 侧同通道见 [17.2](17_AGM_GSL_Architecture/17_17.2_GSL跨VM控制与缓冲区.md) |
+| snd_utils / pcm_plugin / agm_pcm_plugin（tinyalsa 插件分发） | [18.6 用户态消费与插件分发](18_Kernel_Audio/18_18.6_用户态消费与插件分发.md)、[15.12](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) |
 
 ## 场景与版本（20–21）
 
 | 条目 | 章节 |
 |------|------|
-| 多音区并发 / 语音录音 / 蓝牙通话 / 异常恢复（场景链路） | [20 篇](20_End_to_End_Scenarios/README.md) |
-| 12L ↔ 13+/14+ 版本边界台账与迁移提示 | [21.1 版本边界总表](21_Android_Version_Evolution/21_21.1_版本边界总表与迁移提示.md) |
+| 多音区并发 / 语音录音 / 蓝牙通话 / 异常恢复（场景链路） | [19 篇](19_End_to_End_Scenarios/README.md) |
+| 12L ↔ 13+/14+ 版本边界台账与迁移提示 | [20.1 版本边界总表](20_Android_Version_Evolution/20_20.1_版本边界总表与迁移提示.md) |

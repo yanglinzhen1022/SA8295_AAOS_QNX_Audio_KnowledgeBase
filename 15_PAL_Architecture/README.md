@@ -8,7 +8,7 @@
 
 本章按本地 Android 12L + SA8295 AudioReach 实现逐篇整理。先读 [8.1 HAL 边界](../08_HAL_Layer/08_8.1_Audio_HAL双轨架构.md)，再读 **[15.10 HAL-PAL 生命周期](15_15.10_HAL-PAL适配层架构.md)**，遇到类型选择时查 **[15.99 三类对象的工厂映射](15_15.99_附录_Stream-Session-Device映射关系.md)**。
 
-继续读 [15.2 层次与 AGM 入口](15_15.2_架构层次图.md) → [15.12 tinyalsa 插件](15_15.12_QC_audio-alsa_ALSA层实现.md) → [18.1 AGM 会话与图](../18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md)。
+继续读 [15.2 层次与 AGM 入口](15_15.2_架构层次图.md) → [15.12 tinyalsa 插件](15_15.12_QC_audio-alsa_ALSA层实现.md) → [17.1 AGM 会话与图](../17_AGM_GSL_Architecture/17_17.1_AGM会话与音频图.md)。
 
 资源与配置专题：[15.6 ResourceManager](15_15.6_ResourceManager-PAL核心管理模块.md) → [15.7 PayloadBuilder](15_15.7_PayloadBuilder-载荷构建器.md) → [15.9 配置选择与安装](15_15.9_配置文件列表.md)。
 

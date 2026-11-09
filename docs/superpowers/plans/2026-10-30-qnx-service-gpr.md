@@ -3,7 +3,7 @@
 > **For agentic workers:** 使用 executing-plans，由父会话在原分支连续研究/编写；每步以复核源码和静态门禁推进，不派发 writer。整体完成后独立整库 review 按 completion-review-gate 执行。
 
 **Goal:** 把 QNX 服务初始化、AudioReach 驱动目录职责与 GPR/GLink 传输分清，去掉旧文把 Elite APR 栈拼接到 AudioReach 主线的解释。
-**Architecture:** 原 16.17 文件名保持不变，正文改讲 audio_ar/audio_service；16.19 保留 APR 历史路径入口身份，实质转为当前 GPR 路由/所有权；16.16 讲 AudioReach 后端边界并回链 18.2/18.3，不重复 VM 协议。16.18 若仅旧 AMS 内容，则保留说明和现有可用主文导读，不补造其 AR 对应实现。
+**Architecture:** 原 16.17 文件名保持不变，正文改讲 audio_ar/audio_service；16.19 保留 APR 历史路径入口身份，实质转为当前 GPR 路由/所有权；16.16 讲 AudioReach 后端边界并回链 17.2/17.3，不重复 VM 协议。16.18 若仅旧 AMS 内容，则保留说明和现有可用主文导读，不补造其 AR 对应实现。
 **Tech Stack:** QNX C、GPR/GLink、AudioReach 服务、Markdown/Mermaid、/tmp Python 静态检查。
 **Spec:** docs/superpowers/specs/2026-10-30-audioreach-knowledge-base-design.md
 
@@ -29,7 +29,7 @@
 
 **Modify:** 16_Vendor_QNX_Architecture/16_16.17_QNX_audio_service_vm_VM音频服务.md、16_16.16_QNX_audio_driver_vm_VM音频驱动层.md；必要时将 16_16.18_QNX_ams_lib_音频管理服务库.md 调整为历史入口/当前阅读导航，明确不再展开 Elite。
 **Sources:** Qnx/apps/qnx_ap/AMSS/multimedia/audio/audio_ar/audio_service/src/main.c、coreinit.c；该服务 common.mk、aarch64/o-le-s8295-ar-qvmhost/Makefile；实际找到的 sysctrl/Resource_Daemonize 实现；audio_driver 的当前 AR 入口及 gsl_be 对接，不凭目录推导 AVMM/VAPM 必经。
-**Consumes:** 18.2 VM backend 深度、18.3 GSL graph 深度、16.12 双域全景。
+**Consumes:** 17.2 VM backend 深度、17.3 GSL graph 深度、16.12 双域全景。
 **Produces:** 服务启动时序、主线程/后端工作线程与 resource manager 边界，旧 driver_vm/AMS 路径的准确主线定位。
 
 - [x] 读取旧 16.17 全文、16.16/16.18 的入口及主题/源码归属，核对当前 AR service 完整入口、直接依赖与目标构建条件；非主线细节按下方 ruling 处理。
@@ -40,22 +40,22 @@
 
 ## Task 2: GPR/GLink 与导航收束
 
-**Modify:** 16_Vendor_QNX_Architecture/16_16.19_QNX_apr_lib_APR协议库.md、16 README、root README、CLASS_INDEX；18.3 仅必要下游回链。
+**Modify:** 16_Vendor_QNX_Architecture/16_16.19_QNX_apr_lib_APR协议库.md、16 README、root README、CLASS_INDEX；17.3 仅必要下游回链。
 **Sources:** audio_ar/audio_driver/audio_reach/gpr 的 platform/qnx/gpr_init_wrapper.c、core/src/gpr_drv.c、gpr_drv_island.c、选中 session 实现、datalinks/gpr_glink/src/gpr_glink.c/gpr_glink_i.h、api/gpr_packet.h/ipc_dl_api.h；实际 get_glink_port_data_info 实现及构建选择。
-**Consumes:** 18.3 GSL packet/signal 与 Task 1 服务/底层初始化区分。
+**Consumes:** 17.3 GSL packet/signal 与 Task 1 服务/底层初始化区分。
 **Produces:** GPR 按域分发与本地端口回调、GLink 生命周期、packet ownership、传输完成与 DSP response 的分层教材。
 
 - [x] 追完整 send/free/receive/send_done/register 与 GLink state/tx/rx 路径；核对平台 datalink 表和 domain 参数。
 - [x] 重写 16.19：保留路径，不沿用 APR 包/域编号/GSL→APR 假链；配路由图和发送/回收时序图。
-- [x] 更新导航及已核对范围，18.3 回链下层传输；其余旧文不可标成已核对。
+- [x] 更新导航及已核对范围，17.3 回链下层传输；其余旧文不可标成已核对。
 - [x] 新检查器 --navigation，加 GSL graph/PAL/VM/calibration/AGM/focus/AAOS/Native/HAL-PAL 全回归，静态零失败。
 - [ ] 作者自审、暂存门禁和 diff 检查后仅提交指定文档；记录提交与剩余范围，继续下一批。
 
 ## Execution Record
 
 - 起点 4d6ba19；GSL graph 批次提交 9 文件、406 insertions/824 deletions，门禁及新批/旧批静态回归通过；提交后工作区干净。
-- Pre-flight：Task 2 的 GPR 传输不能重复 Task 1 的 service 编排，也不能取代 18.3 的 GSL command response；共享的是上下层边界，不共享虚构的统一进程/内核模型。
-- Ruling：将旧 16.19 的主要篇幅用于 AR GPR，而不新建相同职责的 18.4；旧名保留兼容，标题/导读清楚说明当前内容。16.16/17/18 同样不继续教授用户已排除的 Elite。
+- Pre-flight：Task 2 的 GPR 传输不能重复 Task 1 的 service 编排，也不能取代 17.3 的 GSL command response；共享的是上下层边界，不共享虚构的统一进程/内核模型。
+- Ruling：将旧 16.19 的主要篇幅用于 AR GPR，而不新建相同职责的 17.4；旧名保留兼容，标题/导读清楚说明当前内容。16.16/17/18 同样不继续教授用户已排除的 Elite。
 - 初步源码发现（尚未全部写入正文）：AR main 有 `0 < open(DEVICE_NAME)` 检查而不是完整单实例原语；core init 先置 inited 后调用 base；PIL 线程虽有 skip 日志仍执行 pil_start_subsystem；base join PIL 后检查 adsp_pil_load_status，FastRPC/OEM 后续 detach；FastRPC 失败日志后仍可尝试 gsl_be_init。ifs_base 分支将块内数组地址存入静态指针，生命周期须说明；不做运行复现。
 - 初步 GPR：QNX wrapper 指定 APPS 本地域、ADSP glink/APPS local 表；ipc_dl_glink_init 未传播 gpr_glink_init 返回值；GLink tx_done 是 packet 所有权回收，不是 APM 应答。尚需继续完整追收包和 free。
 - 搜索 sysctrl/Resource_Daemonize 于 audio_driver/utils 未命中导致一次探索命令退出 1，set -e 阻止后续构建条件搜索；这不是验证通过，需重新扩大定位并单独读取构建文件。未修改产品代码。

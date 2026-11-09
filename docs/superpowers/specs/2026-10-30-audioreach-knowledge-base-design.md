@@ -53,12 +53,12 @@
 | 车载控制接口 | 10_AudioControl_HAL | 本地 AudioControl 接口及焦点、Ducking、Muting 的实际交互 |
 | 平台配置与扩展 | 11_Vendor_Layer | 配置语义、解析与生效路径、HAL 扩展；不讲编译打包 |
 | PAL | 15_PAL_Architecture | Stream/Session/Device、ResourceManager、PayloadBuilder、HAL-PAL 适配 |
-| AGM/GSL | 新增 18_AGM_GSL_Architecture | AGM 会话与音频图、GSL 接口、图参数、虚拟化前后端与 DSP 接口边界 |
+| AGM/GSL | 新增 17_AGM_GSL_Architecture | AGM 会话与音频图、GSL 接口、图参数、虚拟化前后端与 DSP 接口边界 |
 | QNX 与平台通路 | 16_Vendor_QNX_Architecture | QNX 服务/驱动、跨 VM 缓冲与消息、ACDB、平台服务、恢复及硬件接口 |
-| Android 内核音频 | 新增 19_Kernel_Audio | 与本产品通路有关的 ALSA/ASoC、PCM/control、平台驱动与上下层配合 |
-| 跨层专题 | 12、13、14 及新增 20_End_to_End_Scenarios | 焦点、音量/设备、蓝牙、播放/录音、多音区、语音与异常恢复 |
-| 工程调试 | 17_Debug_and_OEM_Guide | 服务状态、日志、缓冲与延迟分析、路由/无声/录音等定位方法 |
-| 版本演进 | 新增 21_Android_Version_Evolution | 本地实现与有出处的 Android 14+ 差异及迁移影响 |
+| Android 内核音频 | 新增 18_Kernel_Audio | 与本产品通路有关的 ALSA/ASoC、PCM/control、平台驱动与上下层配合 |
+| 跨层专题 | 12、13、14 及新增 19_End_to_End_Scenarios | 焦点、音量/设备、蓝牙、播放/录音、多音区、语音与异常恢复 |
+| 工程调试 | 21_Debug_and_OEM_Guide | 服务状态、日志、缓冲与延迟分析、路由/无声/录音等定位方法 |
+| 版本演进 | 新增 20_Android_Version_Evolution | 本地实现与有出处的 Android 14+ 差异及迁移影响 |
 
 新增目录只在首篇实质内容完成时创建，不批量生成空章节。Android 内核、QNX、DSP 是不同执行域，不画成一条无条件串行的“层”。
 

@@ -28,7 +28,7 @@
 - 8 组 fresh-context 只读 reviewer（GLM-5.3-jcloud）覆盖全库 18 章；3 组完成：
   rev091012 = BLOCK（11 组 P0）、rev1314 = BLOCK（4 组 P0，含 ch14 系统性树边界错误）、
   rev16top = OK with notes（6 P1）；rev1518 超时但产物 ≈ 完整报告（10 P1）；
-  rev0102/0304/0506/070811 超时（约 93 文件未覆盖）；ch17 未进入任何分组（发现遗漏）。
+  rev0102/0304/0506/070811 超时（约 93 文件未覆盖）；ch21 未进入任何分组（发现遗漏）。
 - 修复：所有已确认 P0/P1 于提交 9c5233b 落地（59 文件，+686/−3059）；11 项 legacy 检查器 +
   fw-doc-check（02/03/07/09/10/11/12/13/14/15/16/17/18 = 0 失败）+ staged gate + git diff --check 通过。
 - 关键更正：ch14 蓝牙树边界（packages/apps/Bluetooth 存在；仅 packages/modules/Bluetooth 缺失）、
@@ -37,7 +37,7 @@
 
 ### 2026-11-03 第 2 轮评审派发（workflow 59644b00，基线 9c5233b）
 - 15 组 fresh-context 只读 reviewer（复用 reviewer agent + 通用契约；抽验下限 15→12，行号偏移允许按类归并）：
-  - 补漏组 11：rev01/02/03/04/05a(5.1-5.9)/05b(5.10-5.17)/06/07/08/11/17（含第 1 轮遗漏的 ch17）。
+  - 补漏组 11：rev01/02/03/04/05a(5.1-5.9)/05b(5.10-5.17)/06/07/08/11/21（含第 1 轮遗漏的 ch21）。
   - 修复复审组 4：revfix0910（18 文件）、revfix12（15）、revfix1314（20）、revfix1516（12）。
 - 派发时基线静态清单（fw-doc-check 全 18 章快照，/tmp/qc-r2-base-*.log）：共 750 处失败，集中在
   ch01=7 / ch04=101 / ch05=223 / ch06=281 / ch08=138（其余 14 章 = 0）；修复预案见 /tmp/qc-review/r2-remediation-prep.md。

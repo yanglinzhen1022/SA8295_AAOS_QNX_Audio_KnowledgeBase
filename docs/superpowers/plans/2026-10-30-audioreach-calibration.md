@@ -3,7 +3,7 @@
 > **For agentic workers:** 使用 executing-plans 在原分支由作者连续执行与自审。已授权不重复请求审批；本批由作者执行。整体完成后的独立 agent review 与时间界限遵循 `2026-10-30-completion-review-gate.md`。
 
 **Goal:** 重写校准两篇，明确 AudioReach 数据库选择、AGM/GSL 加载、QNX 多数据库与远端路径映射，删除以 Elite loader 推演 AR 的主链。
-**Architecture:** 16.6 讲数据库与 GKV/CKV/TKV 的作用、AGM 初始化、GSL/ACDB 查询；16.7 讲源文件部署、远端数据库注册与路径边界。AGM 对象生命周期引用 18.1，不复制。
+**Architecture:** 16.6 讲数据库与 GKV/CKV/TKV 的作用、AGM 初始化、GSL/ACDB 查询；16.7 讲源文件部署、远端数据库注册与路径边界。AGM 对象生命周期引用 17.1，不复制。
 **Tech Stack:** C/C++、GSL/ACDB headers、Android.mk/QNX filesets、Markdown/Mermaid、/tmp Python 检查。
 **Spec:** `docs/superpowers/specs/2026-10-30-audioreach-knowledge-base-design.md`
 
@@ -27,7 +27,7 @@
 ## Task 1: AudioReach 校准基础与数据库初始化
 
 **Modify:** `16_Vendor_QNX_Architecture/16_16.6_ACDB校准体系.md`。
-**Consumes:** 18.1 metadata 与 graph_open；`vendor/qcom/opensource/agm/service/src/graph.c`、`service/Android.mk`；QNX `audio_ar/audio_driver/audio_reach/gsl/src/gsl_main.c` 与 ACDB 调用头；gsl_fe 导出头。
+**Consumes:** 17.1 metadata 与 graph_open；`vendor/qcom/opensource/agm/service/src/graph.c`、`service/Android.mk`；QNX `audio_ar/audio_driver/audio_reach/gsl/src/gsl_main.c` 与 ACDB 调用头；gsl_fe 导出头。
 **Produces:** AR 校准模型、初始化文件列表/delta、图查询边界，必要图与真实片段。
 
 - [x] 阅读 graph_init/get_acdb_files_from_directory 与本地编译条件；对照 QNX gsl_init、graph 查询调用和实际结构。

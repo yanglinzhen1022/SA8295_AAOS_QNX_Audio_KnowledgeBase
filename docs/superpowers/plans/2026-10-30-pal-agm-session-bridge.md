@@ -3,7 +3,7 @@
 > **For agentic workers:** 使用 executing-plans 在当前会话连续执行；作者自审。沿用已批准设计，不重复请求确认。
 
 **Goal:** 纠正“PAL 一律直接调用 AGM / pcm_open 一律进入内核”的简化图，建立 SessionAlsaPcm→tinyalsa plugin→AGM session/graph 的本地学习主线。
-**Architecture:** PAL 架构概览放 15.2；tinyalsa 操作表与 AGM 插件边界放 15.12；AGM 会话/图机制迁入有实质内容的 18.1，16.10 保留原路径并指向唯一深入正文。只在完成首篇正文时创建 18 章。
+**Architecture:** PAL 架构概览放 15.2；tinyalsa 操作表与 AGM 插件边界放 15.12；AGM 会话/图机制迁入有实质内容的 17.1，16.10 保留原路径并指向唯一深入正文。只在完成首篇正文时创建 17 章。
 **Tech Stack:** C/C++/Android.mk/XML 源码阅读，Markdown/Mermaid，临时 Python 校验。
 **Spec:** `docs/superpowers/specs/2026-10-30-audioreach-knowledge-base-design.md`
 
@@ -36,13 +36,13 @@
 
 ## Task 2: AGM 会话与图，建立实质新章
 
-**Files:** 新建 `18_AGM_GSL_Architecture/18_18.1_AGM会话与音频图.md`、`18_AGM_GSL_Architecture/README.md`；修改 `16_Vendor_QNX_Architecture/16_16.10_AGMAudio_Graph_Manager深度解.md`、15/16 README、总 README、CLASS_INDEX。
+**Files:** 新建 `17_AGM_GSL_Architecture/17_17.1_AGM会话与音频图.md`、`17_AGM_GSL_Architecture/README.md`；修改 `16_Vendor_QNX_Architecture/16_16.10_AGMAudio_Graph_Manager深度解.md`、15/16 README、总 README、CLASS_INDEX。
 **Consumes:** Task 1 桥接；agm.c、session_obj.c、graph.c、metadata.c 与公开/私有头、service/Android.mk、IPC 调用两侧。
 **Produces:** session/graph/device 关系，open/config/prepare/start/stop/close，metadata 与 AIF connect，GSL 可见边界。
 
 - [x] 读公共 API 与实际分发、session/graph 生命周期和插件控制入口；识别直接库调用/IPC 的条件。
 - [x] 对旧 16.10 的路径、结构、调用和进程描述运行失败检查；保留已确认的有价值深度，删除未经证实推断。
-- [x] 完成 18.1 正文后才创建章导航；旧 16.10 改为范围明确的迁移入口，更新正文深入引用；16.9/16.11 相邻导航保留 16.10 兼容入口，不复制两套深度解释。
+- [x] 完成 17.1 正文后才创建章导航；旧 16.10 改为范围明确的迁移入口，更新正文深入引用；16.9/16.11 相邻导航保留 16.10 兼容入口，不复制两套深度解释。
 - [x] 执行 `python3 /tmp/qc-agm-doc-check.py --navigation`，检查本批源摘录、链接、锚点与新旧阅读路线，零失败。
 - [x] 执行 focus/AAOS/Native/HAL-PAL 四批回归和 `git diff --check`；作者自审与限制已记录，正文提交 `d80d8df`。附加全变更文件围栏门禁曾失败，随后修正及复验，详见下文；继续 AudioReach 校准与跨域数据库加载。
 
@@ -58,8 +58,8 @@
 - 计量边界：tinyalsa PCM API 成功返回 0；AGM 插件 count 指针的更新未回填 x->result；PAL write 末尾才回填 size，错误可绕过，read 不同。插件 errno=ret 与 tinyalsa EPIPE 比较需保留原实现限制，不宣称运行重启成功。
 - 控制边界：SessionAlsaUtils 的部分 mixer setter 未检查返回；metadata/connect 与逐块 PCM 写入分离。libaudioalsa 原有 msm 控件知识保留但不套入 PAL 主链。
 - IPC 初查：HwBinders 构建 libagmclient，write memcpy 到 HIDL vector；SwBinders 此处 agm_client/Android.mk 构建的是 agmclient 可执行项，不能仅凭目录名宣称同进程或同等可替换部署。
-- Task 2 完成：读取会话池及 get/create、metadata/参数、connect/open、prepare/start/stop/close、read/write、graph 对应实现与 device 引用管理。先完成 18.1 再创建导航，16.10 只保留定位/迁移入口。
-- Task 2 旧文检查日志 `/tmp/qc-agm-task2-before.log`：4 目标、10 失败项，含尚未创建 18.1 和预设迁移词缺失，不当作 10 个旧文技术错误。
+- Task 2 完成：读取会话池及 get/create、metadata/参数、connect/open、prepare/start/stop/close、read/write、graph 对应实现与 device 引用管理。先完成 17.1 再创建导航，16.10 只保留定位/迁移入口。
+- Task 2 旧文检查日志 `/tmp/qc-agm-task2-before.log`：4 目标、10 失败项，含尚未创建 17.1 和预设迁移词缺失，不当作 10 个旧文技术错误。
 - 作者自审：私有 metadata 定义在 agm_priv.h 且 sg_props 类型为 sg_prop；合并按 key 保留最早值；CLOSED connect 只标记 AIF_OPEN；无待连接设备的 open -EPIPE 不是 underrun；set_config 发生在 PCM 插件 open 后。
 - 作者自审：SLIMBUS 先设备后 graph、其他端点相反；AGM device_start 只推进状态/引用而不调 pcm_start；stop 的 RX/TX 顺序不同；close 保留池对象而释放 graph；graph_close 在 GSL 错误后仍释放本地对象。状态与远端成功不等价。
 - 作者自审：read/write 只在局部锁内拒绝 CLOSED，graph 层返回 status/count，HIDL 两侧有拷贝；不宣称并发 close 安全、零拷贝或完整跨 VM 传输。清理覆盖 ret、缓存参数却返回错误的局部路径明确说明，不修产品代码。

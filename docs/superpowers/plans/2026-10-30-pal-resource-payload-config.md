@@ -3,7 +3,7 @@
 > **For agentic workers:** 由作者使用 executing-plans 在原分支连续执行；整体验收遵循 completion-review-gate，不以单批完成代替整体目标。
 
 **Goal:** 重写 PAL ResourceManager、PayloadBuilder、配置三篇，解释资源分配、设备参数选择、KV 与模块 payload 的真实职责及配置来源。
-**Architecture:** 15.6 管运行期资源和状态，15.7 管选择器/KV/模块参数构建，15.9 管配置选择与安装边界；共同承接 15.12、18.1，但不重复 AGM 或 GSL VM 深度。
+**Architecture:** 15.6 管运行期资源和状态，15.7 管选择器/KV/模块参数构建，15.9 管配置选择与安装边界；共同承接 15.12、17.1，但不重复 AGM 或 GSL VM 深度。
 **Tech Stack:** PAL C++、Expat、tinyalsa、AR XML/Android.mk、Markdown/Mermaid、临时 Python 静态校验。
 **Spec:** `docs/superpowers/specs/2026-10-30-audioreach-knowledge-base-design.md`
 

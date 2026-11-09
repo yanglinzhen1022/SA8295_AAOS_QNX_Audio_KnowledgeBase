@@ -21,4 +21,4 @@ executing-plans，父会话唯一 writer；前批提交 8c52ea5。主线 Android
 - 基线 /tmp/qc-mmaudio-before.log：23 失败。终态 article 0 失败；navigation（10 文件/286 链接/38 摘录/11 图）0 失败。
 - 检查器纠错实例：getFileNameExtn 两处 strlcat 均为 XML_PATH_EXTN_MAX_SIZE（误写 MAX_LENGTH）；AudioVoice.h 摘录省略号、构造循环省略号；均按源修正。检查器源后缀过滤补 .xml/.mk。
 - 关键新事实：chime 启动证据仅在 msmnile_au rc（on fs、bike_bell.wav、oneshot），主线 gvmq rc 无服务项；prebuilt 快照有 libaudiohalplugin.so、无 libsndmonitor/libacdbloaderclient；set_mixer_controls 硬编码 card 0 且成功路径不关 mixer；ACDB init 硬编码 sa6155 卡名；错误标签链非全量回滚。auto-casa-xml：PAL 以卡名扩展名选择 resourcemanager_*.xml、PayloadBuilder 固定路径读 usecaseKvManager.xml；hw_ep_info.xml/kvh2xml.xml 本地无按名读者（负结论入文）。Primary HAL(AR)：SRC 六文件、audio_extn 其余文件不在列表；gvmq/au 打包 audio.primary.msmnile.ar、DUAL 分支 .casa symlink、QSSI 分支 audioadsprpcd symlink；AudioVoice VSID×2 会话、两迁移状态机、call_screen/TTY 设备覆盖、开局后补发缓存效果。
-- 16.1 修正：auto-casa-xml 所属域 QNX→Android(LA VM)；gsl_fe 行链接改 16.14/18.2；新增 Primary HAL (AR) 行。
+- 16.1 修正：auto-casa-xml 所属域 QNX→Android(LA VM)；gsl_fe 行链接改 16.14/17.2；新增 Primary HAL (AR) 行。
