@@ -2,18 +2,7 @@
 
 面向分层学习与源码阅读：从应用 API、Framework、AudioFlinger 和策略，到 Audio HAL、PAL、AGM/GSL、QNX、Android 内核与设备侧实现，再把各层放回播放、录音、车载路由、版本迁移和故障定位场景。
 
-**主线：本地 Android 12L / API 32 + SA8295 + QNX，产品使用 AudioReach。** 本地主线不是 Android 14；新版本机制需与对应版本源码对照，不与主线混写。
-
-> **库状态（2026-11-06 收口）：** 21 章全部建成；全部章节正文与根 README / CLASS_INDEX / GLOSSARY 均经至少一轮独立源码评审闭环（19–21 章另经三轮循环，重编号经 4 泳道完整评审），fw-doc-check 全 21 目录 0 失败（记录见[最终完成报告](docs/superpowers/reports/2026-11-05-final-completion-report.md)）。
-
-**阅读约定**
-
-- 蓝牙/LE Audio、13.5–13.7 与 Elite/兼容链等为兼容查阅入口，不作本地主线正确性背书；新版本主题只作查阅线索，不作为本地 Android 12L 的实现依据。
-- 代码位置相对源码根目录标注：Android 为 `Android/lagvm/LINUX/android/`，QNX 音频为 `Qnx/apps/qnx_ap/AMSS/multimedia/audio/`。
-- 接口版本以产品声明为准（audio/effects HIDL 6.0、AudioControl AIDL v1）；声明不等于最终运行服务已核验。
-- 静态源码分析不代表实机行为已验证；运行时效果、延迟等结论一律以各篇边界声明为准。
-
-[术语表](GLOSSARY.md) ｜ [类名反向索引](CLASS_INDEX.md)
+**主线：本地 Android 12L / API 32 + SA8295 + QNX，产品使用 AudioReach。**
 
 ## 目录索引
 
@@ -41,11 +30,9 @@
 | 20 | [版本演进](20_Android_Version_Evolution/) | 版本对照 | 12L 与 13+/14+ 逐项边界台账与迁移提示 |
 | 21 | [调试与 OEM 指南](21_Debug_and_OEM_Guide/) | 问题定位 | 用各层状态、日志和工具验证假设 |
 
-> 注：2026-11-06 章节重编号——原 17 调试与 OEM 指南移至末尾为第 21 章，原 18/19/20/21 章依次前移为 17/18/19/20 章；全部目录、文件名与交叉引用已同步更新（映射与核对记录见 [最终完成报告 §8](docs/superpowers/reports/2026-11-05-final-completion-report.md)）。
-
 ## 分层学习顺序
 
-推荐按知识依赖阅读，不必机械地按目录编号顺读；目录编号已于 2026-11-06 重排（原 17 调试章移至末尾，见上文注）。
+推荐按知识依赖阅读，不必机械地按目录编号顺读。
 
 ### 第一阶段：建立音频对象与控制关系
 
@@ -70,5 +57,3 @@
 **21，并回查相应层的实现**
 
 调试章节放在原理之后学习。先区分 Java AudioService、AudioFlinger、AudioPolicy 和 HAL/PAL 的观察范围，再判断问题属于哪层；不把某条日志或某个成功返回码当作完整链路成功。
-
-以上路线中的主线文章为逐篇源码深写；其余文章经独立评审修复后保留为分章参考。新版本主题可作为查阅线索，不作为本地 Android 12L 的实现依据。
