@@ -1,4 +1,4 @@
-# 第二十一篇：Android 版本演进（12L 本树与 13+/14+ 对照）
+# 第二十篇：Android 版本演进（12L 本树与 13+/14+ 对照）
 
 > [返回总导航](../README.md) · [前置：01.1.6 版本演进](../01_Architecture_Overview/01_1.6_Android_Audio版本演进.md) · [关联：01.1.7 AOSP14 新特性](../01_Architecture_Overview/01_1.7_AOSP14_Audio新特性架构演进.md)、[8 篇 HAL 演进专题](../08_HAL_Layer/README.md)
 
@@ -16,4 +16,4 @@
 - **B 正证据**：本树存在的 File:line 锚点；
 - **C 版本归属**：出处章核验的"AOSP N+ 机制"标注——**本篇未对照 AOSP 13/14 源码复核**，冲突时以出处章为准。
 
-PAL/AGM/GSL/QNX 侧（15/16/18/19 篇）随产品平台演进，不随 AOSP 版本走，不在本篇范围。
+PAL/AGM/GSL/QNX 侧（15/16/17/18 篇）随产品平台演进，不随 AOSP 版本走，不在本篇范围。

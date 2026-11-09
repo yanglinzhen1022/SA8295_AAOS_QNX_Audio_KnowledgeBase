@@ -1,4 +1,4 @@
-# 第十八篇：AGM / GSL 架构
+# 第十七篇：AGM / GSL 架构
 
 > [返回总导航](../README.md) · [前置：PAL](../15_PAL_Architecture/README.md) · [关联：QNX 与平台实现](../16_Vendor_QNX_Architecture/README.md)
 

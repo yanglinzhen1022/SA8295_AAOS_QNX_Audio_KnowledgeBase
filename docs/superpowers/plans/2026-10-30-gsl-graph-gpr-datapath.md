@@ -38,13 +38,13 @@
 
 ## Task 2: 兼容入口与导航
 
-**Modify:** 16_Vendor_QNX_Architecture/16_16.11_SessionGsl与GSL接口.md、16_16.14_GSLGraph_Service_Layer内部架.md、16/18 README、总 README、CLASS_INDEX。
+**Modify:** 16_Vendor_QNX_Architecture/16_16.11_SessionGsl与GSL接口.md、16_16.14_GSLGraph_Service_Layer内部架.md、16/17 README、总 README、CLASS_INDEX。
 **Sources:** PAL session/inc/SessionGsl.h、session/src/Session.cpp、Android.mk、AGM service/Android.mk；Task 1 来源。
 **Produces:** 无重复 GSL 深讲的兼容入口，读者可从旧链接进入新正文。
 
 - [x] 核对 SessionGsl 声明、实际工厂/构建与 PAL/AGM 接口，重写 16.11；不从未找到 .cpp 推导全产品不可能有实现。
 - [x] 17.3 正文完成后将 16.14 改为有定位说明的迁移入口，更新导航并保留相邻链接；未发现指向本批正文的带 anchor 入链。
-- [x] 更新 16/18/root/CLASS_INDEX 的职责和已重写范围。
+- [x] 更新 16/17/root/CLASS_INDEX 的职责和已重写范围。
 - [x] 运行新检查器 --navigation，以及 PAL/GSL VM/校准/AGM/focus/AAOS/Native/HAL-PAL 全部回归；均为零失败。
 - [x] 作者自审，记录证据/局限，运行 /tmp/qc-staged-doc-gate.py 与 diff 检查后指定文档提交；继续 QNX/内核与剩余层，不宣布整库完成。
 

@@ -30,7 +30,7 @@
   rev16top = OK with notes（6 P1）；rev1518 超时但产物 ≈ 完整报告（10 P1）；
   rev0102/0304/0506/070811 超时（约 93 文件未覆盖）；ch21 未进入任何分组（发现遗漏）。
 - 修复：所有已确认 P0/P1 于提交 9c5233b 落地（59 文件，+686/−3059）；11 项 legacy 检查器 +
-  fw-doc-check（02/03/07/09/10/11/12/13/14/15/16/17/18 = 0 失败）+ staged gate + git diff --check 通过。
+  fw-doc-check（02/03/07/09/10/11/12/13/14/15/16/21/17 = 0 失败，旧编号 17/18 现为 21/17）+ staged gate + git diff --check 通过。
 - 关键更正：ch14 蓝牙树边界（packages/apps/Bluetooth 存在；仅 packages/modules/Bluetooth 缺失）、
   ch13 音量真实实现锚点、ch09/10 兼容入口化、ch12 73 处重锚。
 - 用户后续授权：连续执行、无时间上限，父会话保持唯一 writer；本文档前述"一天停止界限"由该授权取代。

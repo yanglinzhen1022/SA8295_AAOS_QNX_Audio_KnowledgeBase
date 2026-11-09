@@ -37,7 +37,7 @@
 
 ## Task 2: QNX 远端数据库与部署边界
 
-**Modify:** `16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md`、16/18 README、总 README、CLASS_INDEX。
+**Modify:** `16_Vendor_QNX_Architecture/16_16.7_ACDB校准数据Android与QNX双域共享.md`、16/17 README、总 README、CLASS_INDEX。
 **Consumes:** Task 1；`Qnx/apps/qnx_ap/AMSS/multimedia/audio/audio_ar/audio_driver/gsl_be/src/gsl_vm_be.c`、`inc/gsl_vm_msg.h`；QNX GSL gsl_add_database；`Qnx/apps/qnx_ap/target/filesets/qc.audio.common.build`；Android AR 配置与 mk。
 **Produces:** QNX 初始库与 GVM 注册库分离、opcode/路径/handle、安装与运行证据界限。
 

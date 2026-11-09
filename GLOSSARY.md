@@ -61,7 +61,7 @@
 | CAPIv2 | Common Audio Processing Interface v2 | DSP 侧编解码/处理接口 | 15 |
 | CASA | — | 高通校准配置工具 | 15 |
 | APR | Asynchronous Packet Router（audio_elite/inc_stubs/diagcmd.h:609） | **Elite 遗留**兼容条目；AR 主线 IPC 为 GPR | 16 |
-| GPR | Generic Packet Router | AudioReach 主线跨域 IPC（QNX audio_service/gsl 使用） | 16/18 |
+| GPR | Generic Packet Router | AudioReach 主线跨域 IPC（QNX audio_service/gsl 使用） | 16/17 |
 | CSD2 | — | QNX 侧通信服务（ACDB 校准下发等，audio_ar/audio_driver/csd2） | 16 |
 
 ## 五、蓝牙音频

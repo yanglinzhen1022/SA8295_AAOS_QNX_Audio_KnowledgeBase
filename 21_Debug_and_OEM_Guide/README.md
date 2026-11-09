@@ -1,6 +1,6 @@
-# 第十七篇：调试方法与OEM定制指南
+# 第二十一篇：调试方法与OEM定制指南
 
-> [← 上一篇：Vendor+QNX双域架构](../16_Vendor_QNX_Architecture/README.md) | [返回导航](../README.md)
+> [← 上一篇：Android 版本演进](../20_Android_Version_Evolution/README.md) | [返回导航](../README.md)
 
 ---
 

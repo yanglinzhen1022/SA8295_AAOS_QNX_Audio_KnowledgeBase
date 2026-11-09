@@ -1,6 +1,6 @@
 # 第十六篇：SA8295 Vendor+QNX双域音频架构深度解析
 
-> [← 上一篇：PAL架构深度解析](../15_PAL_Architecture/README.md) | [返回导航](../README.md) | [下一篇：调试方法与OEM定制指南 →](../21_Debug_and_OEM_Guide/README.md)
+> [← 上一篇：PAL架构深度解析](../15_PAL_Architecture/README.md) | [返回导航](../README.md) | [下一篇：AGM / GSL 架构 →](../17_AGM_GSL_Architecture/README.md)
 
 ---
 

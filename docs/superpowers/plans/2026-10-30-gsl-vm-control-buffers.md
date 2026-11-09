@@ -36,7 +36,7 @@
 
 ## Task 2: 双域总结与导航收口
 
-**Modify:** `16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md`、16/18 README、总 README、CLASS_INDEX。
+**Modify:** `16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md`、16/17 README、总 README、CLASS_INDEX。
 **Read:** QNX `audio_ar/audio_service/src/coreinit.c`、audio_service 相关构建/入口；Android HAL/PAL/AGM 已核对构建条件。
 **Produces:** 逻辑层与运行域分开的平台全景、真实证据边界，以及 17.2 的读者入口。
 

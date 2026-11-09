@@ -1,4 +1,4 @@
-# 第十九篇：Android 内核音频（SA8295 Guest VM）
+# 第十八篇：Android 内核音频（SA8295 Guest VM）
 
 > [返回总导航](../README.md) · [前置：15.12 tinyalsa 与 AGM 插件](../15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) · [关联：16.12 双域架构](../16_Vendor_QNX_Architecture/16_16.12_Android+QNX双域架构总结.md)、[17.2 GSL 跨 VM](../17_AGM_GSL_Architecture/17_17.2_GSL跨VM控制与缓冲区.md)
 

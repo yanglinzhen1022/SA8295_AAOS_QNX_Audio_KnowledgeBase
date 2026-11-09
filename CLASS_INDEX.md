@@ -102,7 +102,7 @@
 | A2dpService / LeAudioService / LeAudioCodecConfig | 14 |
 | BtHelper / HearingAidService | 14 |
 
-## Vendor / PAL / QNX（15–16）
+## Vendor / PAL / QNX（15–17）
 
 | 类/ 接口 | 章节 |
 |-----------|------|
@@ -126,7 +126,7 @@
 | auto-audiod / AutoPower / Silent Boot / audio-chime | 16 |
 | audio_service_vm / ams_lib / apr_lib / audio_dac / audio_expander | 16 |
 
-## Android 内核（19）
+## Android 内核（18）
 
 | 类 / 驱动 | 章节 |
 |-----------|------|
@@ -136,7 +136,7 @@
 | apr_vm / apr_v2（APR over HAB MM_AUD_1/2） | [18.5](18_Kernel_Audio/18_18.5_QDSP6客户端与APR_VM传输.md)；QNX 侧同通道见 [17.2](17_AGM_GSL_Architecture/17_17.2_GSL跨VM控制与缓冲区.md) |
 | snd_utils / pcm_plugin / agm_pcm_plugin（tinyalsa 插件分发） | [18.6 用户态消费与插件分发](18_Kernel_Audio/18_18.6_用户态消费与插件分发.md)、[15.12](15_PAL_Architecture/15_15.12_QC_audio-alsa_ALSA层实现.md) |
 
-## 场景与版本（20–21）
+## 场景与版本（19–20）
 
 | 条目 | 章节 |
 |------|------|
